@@ -1,945 +1,437 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar" dir="rtl" class="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ze Video - منصة مكالمات الفيديو المشفرة والآمنة</title>
-
-  <!-- Tailwind CSS -->
+  <title>ZE VIDEO - شبكة المحادثات والمكالمات الآمنة</title>
   <script src="https://cdn.tailwindcss.com"></script>
-
-  <!-- PeerJS Library for WebRTC Calls -->
   <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
-
-  <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-  <!-- Google Fonts: Tajawal -->
-  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
-
   <script>
     tailwind.config = {
       darkMode: 'class',
       theme: {
         extend: {
-          fontFamily: {
-            sans: ['Tajawal', 'sans-serif'],
-          },
           colors: {
-            brand: {
-              50: '#f0fdf4',
-              100: '#dcfce7',
-              500: '#22c55e',
-              600: '#16a34a',
-              700: '#15803d',
-              800: '#166534',
-              900: '#14532d',
-            },
-            dark: {
-              bg: '#090d16',
-              card: '#111827',
-              border: '#1f2937',
-              hover: '#1e293b'
-            }
+            brand: { 500: '#10b981', 600: '#059669', 700: '#047857' },
+            dark: { 900: '#090d16', 800: '#111827', 700: '#1f2937', 600: '#374151' }
           }
         }
       }
     }
   </script>
-
   <style>
-    body {
-      font-family: 'Tajawal', sans-serif;
-      background-color: #060911;
-      color: #f1f5f9;
-      overflow-x: hidden;
-    }
-
-    /* Glassmorphism Effect */
-    .glass-panel {
-      background: rgba(17, 24, 39, 0.75);
-      backdrop-filter: blur(16px);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-    }
-
-    .glass-modal {
-      background: rgba(15, 23, 42, 0.9);
-      backdrop-filter: blur(20px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-
-    /* Video Mirroring */
-    .mirror {
-      transform: scaleX(-1);
-    }
-
-    /* Custom Scrollbars */
-    ::-webkit-scrollbar {
-      width: 6px;
-    }
-    ::-webkit-scrollbar-track {
-      background: #090d16;
-    }
-    ::-webkit-scrollbar-thumb {
-      background: #1e293b;
-      border-radius: 9999px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-      background: #334155;
-    }
-
-    /* Glowing UI elements */
-    .glow-brand {
-      box-shadow: 0 0 20px rgba(34, 197, 94, 0.25);
-    }
-    .glow-cyan {
-      box-shadow: 0 0 20px rgba(6, 182, 212, 0.25);
-    }
-
-    /* Pulse for live indicators */
-    @keyframes pulse-ring {
-      0% { transform: scale(0.95); opacity: 0.8; }
-      50% { transform: scale(1.05); opacity: 0.4; }
-      100% { transform: scale(0.95); opacity: 0.8; }
-    }
-    .animate-pulse-ring {
-      animation: pulse-ring 2s infinite ease-in-out;
-    }
+    body { background-color: #090d16; color: #f3f4f6; font-family: system-ui, -apple-system, sans-serif; }
+    .glass { background: rgba(17, 24, 39, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
+    .glow { box-shadow: 0 0 20px rgba(16, 185, 129, 0.25); }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-thumb { background: #374151; border-radius: 10px; }
   </style>
 </head>
-<body class="min-h-screen flex flex-col justify-between selection:bg-brand-500 selection:text-black">
+<body class="min-h-screen flex flex-col justify-between overflow-x-hidden selection:bg-brand-500 selection:text-white">
 
-  <!-- Toast Container -->
-  <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-3 pointer-events-none"></div>
-
-  <!-- HEADER NAVBAR -->
-  <nav class="glass-panel sticky top-0 z-40 px-4 md:px-8 py-3.5 flex items-center justify-between border-b border-slate-800">
+  <!-- Header -->
+  <header class="glass sticky top-0 z-40 border-b border-gray-800 px-4 py-3 flex items-center justify-between">
     <div class="flex items-center gap-3">
-      <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-cyan-500 flex items-center justify-center text-slate-950 font-black text-xl shadow-lg glow-brand">
-        Z
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-emerald-400 flex items-center justify-center text-white font-black text-xl shadow-lg glow">
+        ZV
       </div>
       <div>
-        <h1 class="text-xl font-extrabold tracking-wider bg-gradient-to-r from-white via-slate-200 to-brand-500 bg-clip-text text-transparent">
+        <h1 class="text-2xl font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-200">
           ZE VIDEO
         </h1>
-        <div class="flex items-center gap-1.5 text-[11px] text-emerald-400 font-medium">
-          <i class="fa-solid fa-shield-halved text-[10px]"></i>
-          <span>منصة تشفير أمني مباشر</span>
-        </div>
+        <p class="text-[10px] text-gray-400 tracking-widest uppercase">الشبكة الآمنة للمكالمات</p>
       </div>
     </div>
 
-    <!-- Active User Header Info / Logout -->
-    <div id="header-user-menu" class="hidden items-center gap-3">
-      <button onclick="openSupportModal()" class="hidden sm:flex items-center gap-2 bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white text-xs px-3.5 py-2 rounded-xl border border-slate-700 transition-all">
-        <i class="fa-brands fa-whatsapp text-emerald-400 text-sm"></i>
-        <span>الدعم والشكاوى</span>
-      </button>
-
-      <div class="flex items-center gap-2.5 bg-slate-900/90 px-3 py-1.5 rounded-xl border border-slate-800">
-        <img id="header-avatar" src="https://placehold.co/100x100/1e293b/a7f3d0?text=Z" class="w-8 h-8 rounded-lg object-cover border border-slate-700" alt="Avatar">
-        <div class="hidden md:block text-right">
-          <p id="header-fullname" class="text-xs font-bold text-slate-200">...</p>
-          <p id="header-username" class="text-[10px] text-brand-500 font-mono">@...</p>
-        </div>
-      </div>
-
-      <button onclick="handleLogout()" class="bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 p-2.5 rounded-xl border border-rose-500/20 transition-all" title="تسجيل الخروج">
-        <i class="fa-solid fa-power-off text-sm"></i>
+    <div id="userBadge" class="hidden flex items-center gap-3">
+      <img id="myAvatarDisplay" src="" class="w-9 h-9 rounded-full border-2 border-brand-500 object-cover">
+      <span id="myUsernameDisplay" class="font-bold text-sm text-gray-200 hidden sm:inline"></span>
+      <button onclick="logout()" class="text-gray-400 hover:text-red-400 transition text-sm p-2">
+        <i class="fa-solid fa-right-from-bracket"></i>
       </button>
     </div>
-  </nav>
+  </header>
 
-  <!-- MAIN APP WRAPPER -->
-  <main class="flex-grow w-full max-w-7xl mx-auto p-4 md:p-6 flex flex-col justify-center">
+  <!-- Main Container -->
+  <main class="flex-1 max-w-6xl w-full mx-auto p-4 flex flex-col gap-6">
 
-    <!-- 1. AUTHENTICATION SECTION (Login / Register) -->
-    <section id="auth-section" class="w-full max-w-md mx-auto my-auto">
-      <div class="glass-panel rounded-3xl p-6 md:p-8 shadow-2xl relative overflow-hidden">
-        
-        <!-- Background Glowing Orbs -->
-        <div class="absolute -top-16 -right-16 w-32 h-32 bg-brand-500/10 rounded-full blur-2xl pointer-events-none"></div>
-        <div class="absolute -bottom-16 -left-16 w-32 h-32 bg-cyan-500/10 rounded-full blur-2xl pointer-events-none"></div>
-
-        <div class="text-center mb-6">
-          <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-slate-900 border border-slate-700 text-brand-500 mb-3 shadow-inner">
-            <i class="fa-solid fa-user-shield text-2xl"></i>
-          </div>
-          <h2 class="text-2xl font-black text-white">تسجيل الدخول / الحساب</h2>
-          <p class="text-slate-400 text-xs mt-1">تواصل مشفر بخصوصية تامة بدون تتبع</p>
-        </div>
-
-        <!-- Auth Mode Toggle -->
-        <div class="flex bg-slate-950/80 p-1 rounded-2xl mb-6 border border-slate-800">
-          <button id="btn-tab-login" onclick="switchAuthMode('login')" class="flex-1 py-2 text-xs font-bold rounded-xl transition-all bg-brand-600 text-slate-950 shadow-md">
-            دخول لحسابك
-          </button>
-          <button id="btn-tab-register" onclick="switchAuthMode('register')" class="flex-1 py-2 text-xs font-bold rounded-xl transition-all text-slate-400 hover:text-white">
-            إنشاء حساب جديد
-          </button>
-        </div>
-
-        <!-- Login Form -->
-        <form id="form-login" onsubmit="handleLoginSubmit(event)" class="space-y-4">
-          <div>
-            <label class="block text-xs font-semibold text-slate-300 mb-1.5">اسم المستخدم</label>
-            <div class="relative">
-              <span class="absolute inset-y-0 right-0 flex items-center pr-3.5 text-slate-500">
-                <i class="fa-solid fa-at text-xs"></i>
-              </span>
-              <input type="text" id="login-username" required class="w-full bg-slate-950/80 border border-slate-800 text-white rounded-xl pr-10 pl-4 py-2.5 text-xs focus:outline-none focus:border-brand-500 transition-colors" placeholder="أدخل اسم المستخدم...">
-            </div>
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-slate-300 mb-1.5">كلمة المرور</label>
-            <div class="relative">
-              <span class="absolute inset-y-0 right-0 flex items-center pr-3.5 text-slate-500">
-                <i class="fa-solid fa-lock text-xs"></i>
-              </span>
-              <input type="password" id="login-password" required class="w-full bg-slate-950/80 border border-slate-800 text-white rounded-xl pr-10 pl-4 py-2.5 text-xs focus:outline-none focus:border-brand-500 transition-colors" placeholder="••••••••">
-            </div>
-          </div>
-          <button type="submit" class="w-full bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-500 hover:to-brand-400 text-slate-950 font-black py-3 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 text-xs">
-            <span>دخول الآمن</span>
-            <i class="fa-solid fa-arrow-left"></i>
-          </button>
-        </form>
-
-        <!-- Register Form -->
-        <form id="form-register" onsubmit="handleRegisterSubmit(event)" class="space-y-4 hidden">
-          <div>
-            <label class="block text-xs font-semibold text-slate-300 mb-1.5">الاسم المستعار / الظاهر</label>
-            <input type="text" id="reg-fullname" required class="w-full bg-slate-950/80 border border-slate-800 text-white rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-brand-500" placeholder="مثال: الشبح الأسمر">
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-slate-300 mb-1.5">اسم المستخدم (بالإنجليزية)</label>
-            <input type="text" id="reg-username" pattern="^[a-zA-Z0-9_]+$" required class="w-full bg-slate-950/80 border border-slate-800 text-white rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-brand-500" placeholder="مثال: shadow_01">
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-slate-300 mb-1.5">كلمة المرور</label>
-            <input type="password" id="reg-password" required class="w-full bg-slate-950/80 border border-slate-800 text-white rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-brand-500" placeholder="••••••••">
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-slate-300 mb-1.5">رابط الصورة الشخصية (اختياري)</label>
-            <input type="url" id="reg-avatar" class="w-full bg-slate-950/80 border border-slate-800 text-white rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-brand-500" placeholder="https://domain.com/photo.jpg">
-          </div>
-          <button type="submit" class="w-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-black py-3 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 text-xs">
-            <span>إنشاء الحساب المشفر</span>
-            <i class="fa-solid fa-shield-cat"></i>
-          </button>
-        </form>
-
+    <!-- Auth View -->
+    <div id="authView" class="max-w-md w-full mx-auto my-auto glass p-8 rounded-2xl shadow-2xl border border-gray-800 text-center">
+      <div class="mb-6">
+        <h2 class="text-3xl font-extrabold text-white mb-2">مرحباً بك في <span class="text-brand-500">ZE VIDEO</span></h2>
+        <p class="text-sm text-gray-400">أنشئ حسابك وابدأ التواصل الآمن والمباشر</p>
       </div>
-    </section>
 
-    <!-- 2. DASHBOARD SECTION (Protected) -->
-    <section id="dashboard-section" class="hidden flex-col gap-6">
-
-      <!-- Top Privacy Banner -->
-      <div class="glass-panel rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3 border-r-4 border-r-brand-500">
-        <div class="flex items-center gap-3">
-          <div class="w-3 h-3 rounded-full bg-emerald-500 animate-ping"></div>
-          <div>
-            <p class="text-xs font-bold text-white">اتصالك الآن محمي ومشفر بالكامل (P2P Encryption)</p>
-            <p class="text-[11px] text-slate-400">لا يتم تسجيل أو تخزين أي مكالمات صوتية أو فيديو على أي خوادم خارجية.</p>
-          </div>
+      <form id="authForm" onsubmit="handleAuth(event)" class="space-y-4 text-right">
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">اسم المستخدم</label>
+          <input type="text" id="username" required placeholder="مثال: Ahmad99" class="w-full bg-dark-900 border border-gray-700 rounded-xl p-3 text-sm text-white focus:border-brand-500 focus:outline-none transition">
         </div>
-        <button onclick="openSupportModal()" class="sm:hidden text-xs bg-slate-800 text-emerald-400 px-3 py-1.5 rounded-lg border border-slate-700">
-          <i class="fa-brands fa-whatsapp ml-1"></i> الدعم
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">رقم الهاتف (للتأكيد عبر الواتساب)</label>
+          <input type="tel" id="phoneNumber" required placeholder="+905xxxxxxxx" class="w-full bg-dark-900 border border-gray-700 rounded-xl p-3 text-sm text-white focus:border-brand-500 focus:outline-none transition">
+        </div>
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">رابط الصورة الشخصية (اختياري)</label>
+          <input type="url" id="avatarUrl" placeholder="https://..." class="w-full bg-dark-900 border border-gray-700 rounded-xl p-3 text-sm text-white focus:border-brand-500 focus:outline-none transition">
+        </div>
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">كلمة المرور</label>
+          <input type="password" id="password" required placeholder="••••••••" class="w-full bg-dark-900 border border-gray-700 rounded-xl p-3 text-sm text-white focus:border-brand-500 focus:outline-none transition">
+        </div>
+
+        <button type="submit" class="w-full bg-gradient-to-r from-brand-600 to-emerald-500 hover:from-brand-500 hover:to-emerald-400 text-white font-bold py-3.5 rounded-xl shadow-lg transition glow mt-2">
+          دخول / تسجيل الحساب
         </button>
+      </form>
+
+      <div class="mt-6 pt-4 border-t border-gray-800">
+        <a id="waVerifyBtn" href="#" target="_blank" class="hidden items-center justify-center gap-2 text-xs text-emerald-400 hover:underline">
+          <i class="fa-brands fa-whatsapp text-base"></i> تأكيد الحساب مع فريق الدعم عبر الواتساب
+        </a>
       </div>
+    </div>
 
-      <!-- Main Directory & Call Grid Layout -->
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+    <!-- Dashboard View -->
+    <div id="dashboardView" class="hidden flex-1 grid grid-cols-1 md:grid-cols-3 gap-6">
 
-        <!-- User Directory Sidebar (5 Cols) -->
-        <div class="lg:col-span-5 flex flex-col gap-4">
-          <div class="glass-panel rounded-2xl p-5 flex flex-col gap-4">
-            
-            <div class="flex items-center justify-between">
-              <h3 class="font-black text-sm text-white flex items-center gap-2">
-                <i class="fa-solid fa-users text-brand-500"></i>
-                <span>دليل المشتركين المتاحين</span>
-              </h3>
-              <span id="directory-count" class="text-[11px] bg-slate-900 text-slate-300 px-2.5 py-0.5 rounded-full border border-slate-800">0</span>
-            </div>
-
-            <!-- Search Input -->
-            <div class="relative">
-              <span class="absolute inset-y-0 right-0 flex items-center pr-3.5 text-slate-500">
-                <i class="fa-solid fa-magnifying-glass text-xs"></i>
-              </span>
-              <input type="text" id="search-input" oninput="filterUserDirectory()" class="w-full bg-slate-950/80 border border-slate-800 text-white rounded-xl pr-10 pl-4 py-2.5 text-xs focus:outline-none focus:border-brand-500" placeholder="ادخل اسم المستخدم الذي تريد التواصل معه...">
-            </div>
-
-            <!-- Directory Users Scroll List -->
-            <div id="users-directory-list" class="space-y-3 max-h-[480px] overflow-y-auto pr-1">
-              <!-- Rendered via JS -->
-            </div>
-
-            <div class="pt-2 border-t border-slate-800 flex items-center justify-between text-[11px] text-slate-500">
-              <span>هل تريد إضافة حسابات وهمية للتجربة؟</span>
-              <button onclick="addDemoAccounts()" class="text-brand-500 hover:underline font-bold">إضافة مشتركين تجريبيين</button>
-            </div>
-
-          </div>
+      <!-- Left Sidebar: Search & Users List -->
+      <div class="glass p-4 rounded-2xl flex flex-col gap-4 border border-gray-800">
+        <div class="flex items-center justify-between border-b border-gray-800 pb-3">
+          <h3 class="font-bold text-white flex items-center gap-2">
+            <i class="fa-solid fa-users text-brand-500"></i> المشتركين المتاحين
+          </h3>
+          <span id="userCount" class="text-xs bg-brand-500/20 text-brand-500 px-2.5 py-1 rounded-full font-bold">0</span>
         </div>
 
-        <!-- Video Display Area (7 Cols) -->
-        <div class="lg:col-span-7">
-          <div class="glass-panel rounded-2xl p-5 min-h-[480px] h-full flex flex-col justify-between relative overflow-hidden">
+        <!-- Search Bar -->
+        <div class="relative">
+          <input type="text" id="searchInput" oninput="filterUsers()" placeholder="ادخل اسم المستخدم الذي تريد التواصل معه..." class="w-full bg-dark-900 border border-gray-700 rounded-xl py-2.5 pr-9 pl-3 text-xs text-white focus:border-brand-500 focus:outline-none">
+          <i class="fa-solid fa-magnifying-glass absolute right-3 top-3 text-gray-500 text-xs"></i>
+        </div>
 
-            <!-- IDLE DISPLAY STATE -->
-            <div id="call-idle-state" class="my-auto text-center p-6 flex flex-col items-center justify-center gap-4">
-              <div class="w-20 h-20 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-600 shadow-inner">
-                <i class="fa-solid fa-video-slash text-3xl"></i>
-              </div>
+        <!-- Directory List -->
+        <div id="usersList" class="flex-1 overflow-y-auto max-h-[500px] space-y-2 pr-1">
+          <!-- User items will load here -->
+        </div>
+      </div>
+
+      <!-- Right Main Panel: Active Chat / Call Window -->
+      <div class="md:col-span-2 glass rounded-2xl p-4 flex flex-col justify-between border border-gray-800 min-h-[500px]">
+        
+        <!-- Default State: No user selected -->
+        <div id="noChatSelected" class="my-auto text-center p-8 space-y-3">
+          <div class="w-16 h-16 bg-dark-900 rounded-full flex items-center justify-center mx-auto text-brand-500 text-2xl border border-gray-800">
+            <i class="fa-solid fa-comments"></i>
+          </div>
+          <h4 class="text-lg font-bold text-gray-300">اختر حساباً لبدء المحادثة أو الاتصال</h4>
+          <p class="text-xs text-gray-500 max-w-sm mx-auto">تصفح قائمة المشتركين على اليسار، واضغط على أي حساب للبدء في الدردشة، إرسال الصور، أو اجراء مكالمة صوت وفيديو مباشرة.</p>
+        </div>
+
+        <!-- Active Chat Interface -->
+        <div id="activeChatBox" class="hidden flex-1 flex flex-col justify-between">
+          
+          <!-- Chat Header -->
+          <div class="flex items-center justify-between border-b border-gray-800 pb-3 mb-3">
+            <div class="flex items-center gap-3">
+              <img id="chatUserAvatar" src="" class="w-10 h-10 rounded-full object-cover border border-brand-500">
               <div>
-                <h3 class="text-lg font-bold text-white">لا توجد مكالمة فيديو نشطة حالياً</h3>
-                <p class="text-slate-400 text-xs max-w-sm mx-auto mt-1 leading-relaxed">
-                  اختر أحد المشتركين من قائمة الدليل أو ابحث عن اسم المستخدم لبدء طلب مكالمة فيديو مشفرة.
+                <h4 id="chatUsername" class="font-bold text-white text-sm"></h4>
+                <p id="chatUserStatus" class="text-[10px] text-emerald-400 flex items-center gap-1">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block"></span> متصل الآن
                 </p>
               </div>
             </div>
 
-            <!-- ACTIVE CALL DISPLAY STATE -->
-            <div id="call-active-state" class="hidden flex-col gap-4 w-full h-full flex-grow">
-              
-              <!-- Call Top Header Status -->
-              <div class="flex items-center justify-between bg-slate-950/80 px-4 py-3 rounded-xl border border-slate-800">
-                <div class="flex items-center gap-3">
-                  <span class="w-3 h-3 rounded-full bg-rose-500 animate-ping"></span>
-                  <div>
-                    <span id="call-target-name" class="font-extrabold text-xs text-white block">مكالمة نشطة</span>
-                    <span class="text-[10px] text-emerald-400 font-mono"><i class="fa-solid fa-lock text-[9px] ml-1"></i>مشفر بنظام نهاية إلى نهاية</span>
-                  </div>
-                </div>
-                <div id="call-duration" class="font-mono text-xs text-slate-300 bg-slate-900 px-3 py-1 rounded-lg border border-slate-800">
-                  00:00
-                </div>
-              </div>
-
-              <!-- Main Video Stage -->
-              <div class="relative w-full flex-grow min-h-[320px] bg-black rounded-xl overflow-hidden border border-slate-800 flex items-center justify-center">
-                
-                <!-- Remote Video -->
-                <video id="remote-video" autoplay playsinline class="w-full h-full object-cover"></video>
-
-                <!-- Remote Placeholder -->
-                <div id="remote-placeholder" class="absolute inset-0 bg-slate-950 flex flex-col items-center justify-center text-slate-600 gap-3">
-                  <div class="w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center text-2xl border border-slate-800 text-slate-500">
-                    <i class="fa-solid fa-user"></i>
-                  </div>
-                  <span class="text-xs text-slate-400 font-medium">جاري ربط الفيديو مع الطرف الآخر...</span>
-                </div>
-
-                <!-- Self Floating Video (PIP) -->
-                <div class="absolute bottom-4 left-4 w-28 md:w-40 aspect-video bg-slate-900 rounded-xl overflow-hidden border-2 border-brand-500 shadow-2xl z-10">
-                  <video id="local-video" autoplay muted playsinline class="w-full h-full object-cover mirror"></video>
-                </div>
-              </div>
-
-              <!-- In-Call Control Buttons -->
-              <div class="flex items-center justify-center gap-4 py-2.5 bg-slate-950/80 rounded-xl border border-slate-800">
-                <button id="btn-toggle-mic" onclick="toggleAudio()" class="w-11 h-11 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center justify-center transition-all">
-                  <i class="fa-solid fa-microphone text-sm"></i>
-                </button>
-
-                <button onclick="hangUpCall()" class="w-14 h-12 rounded-xl bg-rose-600 hover:bg-rose-500 text-white flex items-center justify-center shadow-lg transition-all">
-                  <i class="fa-solid fa-phone-slash text-base"></i>
-                </button>
-
-                <button id="btn-toggle-cam" onclick="toggleVideo()" class="w-11 h-11 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center justify-center transition-all">
-                  <i class="fa-solid fa-video text-sm"></i>
-                </button>
-              </div>
-
+            <!-- Call & Action Buttons -->
+            <div class="flex items-center gap-2">
+              <button onclick="startCall('audio')" title="مكالمة صوتية" class="p-2.5 bg-dark-900 hover:bg-brand-600 text-white rounded-xl transition border border-gray-700">
+                <i class="fa-solid fa-phone text-sm"></i>
+              </button>
+              <button onclick="startCall('video')" title="مكالمة فيديو" class="p-2.5 bg-brand-600 hover:bg-brand-500 text-white rounded-xl transition glow">
+                <i class="fa-solid fa-video text-sm"></i>
+              </button>
+              <button onclick="toggleBlockUser()" id="blockBtn" title="حظر المستخدم" class="p-2.5 bg-dark-900 hover:bg-red-600/20 text-red-400 rounded-xl transition border border-gray-700">
+                <i class="fa-solid fa-ban text-sm"></i>
+              </button>
             </div>
-
           </div>
+
+          <!-- Messages Area -->
+          <div id="messagesArea" class="flex-1 overflow-y-auto space-y-3 p-2 my-2 max-h-[350px]">
+            <!-- Dynamic Messages -->
+          </div>
+
+          <!-- Chat Input Controls -->
+          <div class="pt-3 border-t border-gray-800 flex items-center gap-2">
+            <label for="imageUpload" class="p-3 bg-dark-900 hover:bg-gray-800 text-gray-400 hover:text-white rounded-xl cursor-pointer transition border border-gray-700">
+              <i class="fa-solid fa-image"></i>
+            </label>
+            <input type="file" id="imageUpload" accept="image/*" onchange="sendImage(event)" class="hidden">
+
+            <input type="text" id="msgInput" onkeypress="if(event.key==='Enter') sendMessage()" placeholder="اكتب رسالتك هنا..." class="flex-1 bg-dark-900 border border-gray-700 rounded-xl p-3 text-xs text-white focus:border-brand-500 focus:outline-none">
+
+            <button onclick="sendMessage()" class="p-3 bg-brand-600 hover:bg-brand-500 text-white rounded-xl transition glow">
+              <i class="fa-solid fa-paper-plane"></i>
+            </button>
+          </div>
+
         </div>
 
       </div>
 
-    </section>
+    </div>
 
   </main>
 
-  <!-- MODAL 1: PRIVACY TERMS AGREEMENT -->
-  <div id="privacy-modal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-    <div class="glass-modal rounded-3xl max-w-md w-full p-6 text-right border border-slate-800 shadow-2xl">
-      <div class="w-12 h-12 rounded-2xl bg-brand-500/10 text-brand-500 flex items-center justify-center mb-4 text-xl border border-brand-500/20">
-        <i class="fa-solid fa-user-lock"></i>
-      </div>
-      <h3 class="text-lg font-black text-white mb-2">بنود الخصوصية والأمان العالمية</h3>
-      <div class="text-xs text-slate-300 space-y-2 mb-6 max-h-48 overflow-y-auto pr-2 leading-relaxed">
-        <p>مرحباً بك في منصة <strong>Ze Video</strong>. يرجى الموافقة على الشروط التالية لمتابعة الاستخدام:</p>
-        <ul class="list-disc list-inside space-y-1 text-slate-400">
-          <li>جميع الاتصالات تتم مباشرة بين الأجهزة (P2P) ولا يتم تسجيل الصوت أو الفيديو.</li>
-          <li>أنت مسؤول بالكامل عن استخدامك للمنصة والاحترام المتبادل بين المشتركين.</li>
-          <li>يمنع تسجيل أو التقاط شاشات المستخدمين الآخرين دون إذنهم صراحة.</li>
-        </ul>
-      </div>
-      <button onclick="acceptPrivacyTerms()" class="w-full bg-brand-600 hover:bg-brand-500 text-slate-950 font-extrabold py-3 rounded-xl shadow-lg transition-all text-xs">
-        موافق ومتابعة إلى المنصة
+  <!-- Video Call Overlay -->
+  <div id="videoCallModal" class="hidden fixed inset-0 z-50 bg-black/90 flex flex-col items-center justify-between p-6">
+    <div class="text-center">
+      <h3 id="callTargetName" class="text-white font-bold text-lg">جاري الاتصال...</h3>
+      <p id="callStatusText" class="text-xs text-gray-400">انتظار الرد</p>
+    </div>
+
+    <!-- Video Streams Container -->
+    <div class="relative w-full max-w-3xl flex-1 my-4 flex items-center justify-center overflow-hidden rounded-2xl bg-dark-900 border border-gray-800">
+      <video id="remoteVideo" autoplay playsinline class="w-full h-full object-cover"></video>
+      <video id="localVideo" autoplay muted playsinline class="absolute bottom-4 left-4 w-32 h-44 object-cover rounded-xl border-2 border-brand-500 shadow-2xl bg-black"></video>
+    </div>
+
+    <!-- Controls -->
+    <div class="flex items-center gap-4">
+      <button onclick="toggleMute()" id="muteBtn" class="w-12 h-12 rounded-full bg-gray-800 text-white hover:bg-gray-700 flex items-center justify-center text-lg">
+        <i class="fa-solid fa-microphone"></i>
+      </button>
+      <button onclick="endCall()" class="w-14 h-14 rounded-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center text-xl shadow-lg">
+        <i class="fa-solid fa-phone-slash"></i>
+      </button>
+      <button onclick="toggleCamera()" id="camBtn" class="w-12 h-12 rounded-full bg-gray-800 text-white hover:bg-gray-700 flex items-center justify-center text-lg">
+        <i class="fa-solid fa-video"></i>
       </button>
     </div>
   </div>
 
-  <!-- MODAL 2: CALL CONFIRMATION PROMPT -->
-  <div id="confirm-call-modal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-    <div class="glass-modal rounded-3xl max-w-sm w-full p-6 text-center border border-slate-800 shadow-2xl">
-      <div class="w-16 h-16 rounded-full bg-emerald-500/10 text-emerald-400 mx-auto flex items-center justify-center mb-4 text-2xl border border-emerald-500/20 animate-pulse">
-        <i class="fa-solid fa-video"></i>
-      </div>
-      <h3 class="text-base font-black text-white">تأكيد الاتصال المرئي</h3>
-      <p id="confirm-user-text" class="text-xs text-slate-300 my-3 font-semibold">هل تريد التواصل مع الحساب؟</p>
-      
-      <div class="flex items-center gap-3 mt-6">
-        <button id="btn-start-call-ok" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-black py-2.5 rounded-xl transition-all text-xs">
-          موافق وبدء
-        </button>
-        <button onclick="closeConfirmModal()" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-2.5 rounded-xl transition-all text-xs">
-          إلغاء
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL 3: INCOMING CALL NOTIFICATION -->
-  <div id="incoming-modal" class="fixed inset-0 bg-slate-950/95 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-    <div class="glass-modal rounded-3xl max-w-sm w-full p-6 text-center border border-brand-500/30 shadow-2xl glow-brand">
-      <div class="w-16 h-16 rounded-full bg-brand-500/20 text-brand-400 mx-auto flex items-center justify-center mb-4 text-2xl border border-brand-500/40 animate-bounce">
-        <i class="fa-solid fa-phone-volume"></i>
-      </div>
-      <h3 class="text-base font-black text-white">مكالمة فيديو واردة</h3>
-      <p id="incoming-caller-id" class="text-xs text-brand-400 font-bold my-2">...</p>
-      <p class="text-[11px] text-slate-400 mb-6">يرغب المشترك في إجراء اتصال مرئي مشفر معي.</p>
-
-      <div class="flex items-center gap-3">
-        <button onclick="acceptIncomingCall()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-black py-2.5 rounded-xl transition-all text-xs flex items-center justify-center gap-2">
-          <i class="fa-solid fa-phone"></i>
-          <span>رد</span>
-        </button>
-        <button onclick="declineIncomingCall()" class="flex-1 bg-rose-600 hover:bg-rose-500 text-white font-bold py-2.5 rounded-xl transition-all text-xs flex items-center justify-center gap-2">
-          <i class="fa-solid fa-xmark"></i>
-          <span>رفض</span>
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL 4: SUPPORT & FEEDBACK (WHATSAPP DIRECT) -->
-  <div id="support-modal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-    <div class="glass-modal rounded-3xl max-w-md w-full p-6 text-right border border-slate-800 shadow-2xl">
-      <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-800">
-        <h3 class="text-sm font-black text-white flex items-center gap-2">
-          <i class="fa-brands fa-whatsapp text-emerald-400 text-base"></i>
-          <span>فريق الدعم والشكاوى</span>
-        </h3>
-        <button onclick="closeSupportModal()" class="text-slate-500 hover:text-white">
-          <i class="fa-solid fa-xmark"></i>
-        </button>
-      </div>
-
-      <p class="text-xs text-slate-300 mb-4 leading-relaxed">
-        قم بكتبة رسالتك أو استفسارك وسيتم توجيهك فوراً وتنسيقها مع فريق الدعم عبر الواتساب على الرقم المعتمد.
-      </p>
-
-      <div class="space-y-3">
-        <div>
-          <label class="block text-[11px] font-semibold text-slate-400 mb-1">تفاصيل الرسالة أو الشكوى</label>
-          <textarea id="support-message" rows="4" class="w-full bg-slate-950 border border-slate-800 text-white rounded-xl p-3 text-xs focus:outline-none focus:border-emerald-500 resize-none" placeholder="اكتب تفاصيل طلبك هنا..."></textarea>
-        </div>
-
-        <button onclick="sendSupportToWhatsApp()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-black py-3 rounded-xl shadow-lg transition-all text-xs flex items-center justify-center gap-2">
-          <i class="fa-brands fa-whatsapp text-sm"></i>
-          <span>إرسال عبر الواتساب مباشرة</span>
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- FOOTER -->
-  <footer class="py-4 text-center text-[11px] text-slate-600 border-t border-slate-900">
-    تطبيق Ze Video &copy; 2026 - نظام مكالمات الفيديو المشفر بخصوصية تامة
+  <!-- Footer & Support -->
+  <footer class="glass border-t border-gray-800 py-3 px-4 text-center text-xs text-gray-500 flex flex-col sm:flex-row items-center justify-between gap-2">
+    <div>جميع الحقوق محفوظة &copy; ZE VIDEO 2026</div>
+    <a href="https://wa.me/905354637591?text=مرحباً%20فريق%20دعم%20ZE%20VIDEO" target="_blank" class="text-brand-500 hover:underline flex items-center gap-1">
+      <i class="fa-brands fa-whatsapp"></i> مراسلة فريق الدعم والشكاوى
+    </a>
   </footer>
 
-  <!-- MAIN JAVASCRIPT APP LOGIC -->
+  <!-- App Script -->
   <script>
-    // Global App State
     let currentUser = null;
     let peer = null;
-    let localStream = null;
     let activeCall = null;
-    let pendingIncomingCall = null;
+    let localStream = null;
+    let selectedChatUser = null;
+    
+    // Demo Mock Users Database
+    let allUsers = JSON.parse(localStorage.getItem('ze_users')) || [
+      { username: 'Lina_Sy', phone: '+90500000001', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150', blocked: false },
+      { username: 'Samer_VIP', phone: '+90500000002', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150', blocked: false },
+      { username: 'Nour_G', phone: '+90500000003', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150', blocked: false }
+    ];
 
-    let isMicOn = true;
-    let isCamOn = true;
+    let messages = JSON.parse(localStorage.getItem('ze_messages')) || {};
 
-    let callTimer = null;
-    let secondsCount = 0;
-
-    let selectedCallTarget = null;
-
-    const SUPPORT_WHATSAPP_NUMBER = "+905354637591";
-
-    // On Application DOM Load
-    window.addEventListener('DOMContentLoaded', () => {
-      checkSession();
-    });
-
-    // Toast Engine
-    function showToast(msg, type = 'info') {
-      const container = document.getElementById('toast-container');
-      const toast = document.createElement('div');
-
-      const colors = {
-        info: 'bg-slate-900 border-slate-700 text-white',
-        success: 'bg-emerald-950 border-emerald-500 text-emerald-200',
-        error: 'bg-rose-950 border-rose-500 text-rose-200'
-      };
-
-      toast.className = `pointer-events-auto px-4 py-3 rounded-xl text-xs font-bold border shadow-2xl flex items-center gap-2 transition-all transform translate-y-2 ${colors[type] || colors.info}`;
-      toast.innerHTML = `<i class="fa-solid fa-circle-info text-sm"></i><span>${msg}</span>`;
-
-      container.appendChild(toast);
-      setTimeout(() => {
-        toast.style.opacity = '0';
-        setTimeout(() => toast.remove(), 300);
-      }, 4000);
-    }
-
-    // Toggle Login/Register Forms
-    function switchAuthMode(mode) {
-      const loginForm = document.getElementById('form-login');
-      const regForm = document.getElementById('form-register');
-      const tabLogin = document.getElementById('btn-tab-login');
-      const tabReg = document.getElementById('btn-tab-register');
-
-      if (mode === 'login') {
-        loginForm.classList.remove('hidden');
-        regForm.classList.add('hidden');
-        tabLogin.className = "flex-1 py-2 text-xs font-bold rounded-xl transition-all bg-brand-600 text-slate-950 shadow-md";
-        tabReg.className = "flex-1 py-2 text-xs font-bold rounded-xl transition-all text-slate-400 hover:text-white";
-      } else {
-        regForm.classList.remove('hidden');
-        loginForm.classList.add('hidden');
-        tabReg.className = "flex-1 py-2 text-xs font-bold rounded-xl transition-all bg-cyan-500 text-slate-950 shadow-md";
-        tabLogin.className = "flex-1 py-2 text-xs font-bold rounded-xl transition-all text-slate-400 hover:text-white";
-      }
-    }
-
-    // Local Storage Helpers
-    function getRegisteredUsers() {
-      return JSON.parse(localStorage.getItem('ze_video_users') || '[]');
-    }
-
-    function saveUsers(users) {
-      localStorage.setItem('ze_video_users', JSON.stringify(users));
-    }
-
-    function checkSession() {
-      const savedSession = localStorage.getItem('ze_video_session');
-      if (savedSession) {
-        currentUser = JSON.parse(savedSession);
-        
-        // Check Privacy terms acceptance
-        if (!localStorage.getItem('ze_privacy_accepted')) {
-          document.getElementById('privacy-modal').classList.remove('hidden');
-        } else {
-          initDashboard();
-        }
-      }
-    }
-
-    // Register Handler
-    function handleRegisterSubmit(e) {
-      e.preventDefault();
-      const fullname = document.getElementById('reg-fullname').value.trim();
-      const username = document.getElementById('reg-username').value.trim().toLowerCase();
-      const password = document.getElementById('reg-password').value;
-      const avatar = document.getElementById('reg-avatar').value.trim() || `https://placehold.co/100x100/1e293b/22c55e?text=${username.charAt(0).toUpperCase()}`;
-
-      let users = getRegisteredUsers();
-      if (users.some(u => u.username === username)) {
-        showToast('اسم المستخدم هذا موجود بالفعل، اختر اسماً آخر.', 'error');
-        return;
-      }
-
-      const newUser = { fullname, username, password, avatar };
-      users.push(newUser);
-      saveUsers(users);
-
-      currentUser = newUser;
-      localStorage.setItem('ze_video_session', JSON.stringify(currentUser));
-
-      if (!localStorage.getItem('ze_privacy_accepted')) {
-        document.getElementById('privacy-modal').classList.remove('hidden');
-      } else {
+    window.onload = function() {
+      const savedUser = localStorage.getItem('ze_logged_user');
+      if (savedUser) {
+        currentUser = JSON.parse(savedUser);
         initDashboard();
       }
-    }
+    };
 
-    // Login Handler
-    function handleLoginSubmit(e) {
+    function handleAuth(e) {
       e.preventDefault();
-      const username = document.getElementById('login-username').value.trim().toLowerCase();
-      const password = document.getElementById('login-password').value;
+      const user = document.getElementById('username').value.trim();
+      const phone = document.getElementById('phoneNumber').value.trim();
+      const avatar = document.getElementById('avatarUrl').value.trim() || `https://api.dicebear.com/7.x/bottts/svg?seed=${user}`;
 
-      let users = getRegisteredUsers();
-      const found = users.find(u => u.username === username && u.password === password);
-
-      if (!found) {
-        showToast('بيانات الدخول غير صحيحة، تأكد من اسم المستخدم وكلمة المرور.', 'error');
-        return;
+      currentUser = { username: user, phone: phone, avatar: avatar };
+      
+      if(!allUsers.find(u => u.username === user)) {
+        allUsers.push(currentUser);
+        localStorage.setItem('ze_users', JSON.stringify(allUsers));
       }
 
-      currentUser = found;
-      localStorage.setItem('ze_video_session', JSON.stringify(currentUser));
-
-      if (!localStorage.getItem('ze_privacy_accepted')) {
-        document.getElementById('privacy-modal').classList.remove('hidden');
-      } else {
-        initDashboard();
-      }
-    }
-
-    // Accept Privacy Terms
-    function acceptPrivacyTerms() {
-      localStorage.setItem('ze_privacy_accepted', 'true');
-      document.getElementById('privacy-modal').classList.add('hidden');
+      localStorage.setItem('ze_logged_user', JSON.stringify(currentUser));
       initDashboard();
     }
 
-    // Logout Handler
-    function handleLogout() {
-      if (peer) peer.destroy();
-      stopLocalStream();
-
-      currentUser = null;
-      localStorage.removeItem('ze_video_session');
-
-      document.getElementById('dashboard-section').classList.add('hidden');
-      document.getElementById('dashboard-section').classList.remove('flex');
-      document.getElementById('auth-section').classList.remove('hidden');
-      document.getElementById('header-user-menu').classList.add('hidden');
-      document.getElementById('header-user-menu').classList.remove('flex');
-
-      showToast('تم تسجيل الخروج بنجاح.', 'info');
-    }
-
-    // Initialize Dashboard State & Peer
     function initDashboard() {
-      document.getElementById('auth-section').classList.add('hidden');
-      document.getElementById('dashboard-section').classList.remove('hidden');
-      document.getElementById('dashboard-section').classList.add('flex');
+      document.getElementById('authView').classList.add('hidden');
+      document.getElementById('dashboardView').classList.remove('hidden');
+      document.getElementById('userBadge').classList.remove('hidden');
+      document.getElementById('myUsernameDisplay').innerText = currentUser.username;
+      document.getElementById('myAvatarDisplay').src = currentUser.avatar;
 
-      document.getElementById('header-user-menu').classList.remove('hidden');
-      document.getElementById('header-user-menu').classList.add('flex');
+      // Init Peer
+      peer = new Peer(currentUser.username.toLowerCase());
+      
+      peer.on('call', call => {
+        if(confirm(`مكالمة واردة من ${call.peer}! هل تريد الرد؟`)) {
+          navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then(stream => {
+            localStream = stream;
+            document.getElementById('localVideo').srcObject = stream;
+            call.answer(stream);
+            showCallModal(call.peer);
 
-      document.getElementById('header-fullname').innerText = currentUser.fullname;
-      document.getElementById('header-username').innerText = `@${currentUser.username}`;
-      document.getElementById('header-avatar').src = currentUser.avatar;
+            call.on('stream', remoteStream => {
+              document.getElementById('remoteVideo').srcObject = remoteStream;
+            });
+            activeCall = call;
+          });
+        }
+      });
 
-      renderDirectoryList();
-      initPeerJSConnection();
+      renderUsers();
     }
 
-    // Directory Rendering
-    function renderDirectoryList() {
-      const container = document.getElementById('users-directory-list');
-      const searchQuery = document.getElementById('search-input').value.toLowerCase();
-      const users = getRegisteredUsers();
+    function renderUsers() {
+      const list = document.getElementById('usersList');
+      list.innerHTML = '';
+      const filtered = allUsers.filter(u => u.username !== currentUser.username);
+      document.getElementById('userCount').innerText = filtered.length;
 
-      // Exclude current logged in user
-      const filtered = users.filter(u => u.username !== currentUser.username &&
-        (u.fullname.toLowerCase().includes(searchQuery) || u.username.toLowerCase().includes(searchQuery))
-      );
-
-      document.getElementById('directory-count').innerText = filtered.length;
-
-      if (filtered.length === 0) {
-        container.innerHTML = `
-          <div class="text-center py-8 text-slate-600 text-xs">
-            لا يوجد مشتركين مطابقين للبحث حالياً
+      filtered.forEach(u => {
+        list.innerHTML += `
+          <div onclick="openChat('${u.username}')" class="flex items-center justify-between p-2.5 rounded-xl bg-dark-900/60 hover:bg-dark-900 border border-gray-800 cursor-pointer transition">
+            <div class="flex items-center gap-2.5">
+              <img src="${u.avatar}" class="w-9 h-9 rounded-full object-cover border border-gray-700">
+              <div>
+                <h5 class="text-xs font-bold text-white">${u.username}</h5>
+                <p class="text-[10px] text-gray-400">${u.phone}</p>
+              </div>
+            </div>
+            <i class="fa-solid fa-chevron-left text-xs text-gray-600"></i>
           </div>
         `;
-        return;
-      }
-
-      container.innerHTML = filtered.map(u => `
-        <div class="bg-slate-950/80 p-3 rounded-xl border border-slate-800 flex items-center justify-between gap-3 hover:border-slate-700 transition-colors">
-          <div class="flex items-center gap-3 min-w-0">
-            <div class="relative flex-shrink-0">
-              <img src="${u.avatar}" class="w-10 h-10 rounded-xl object-cover border border-slate-800" alt="Avatar">
-              <span class="absolute -bottom-1 -right-1 w-3 h-3 bg-emerald-500 border-2 border-slate-950 rounded-full"></span>
-            </div>
-            <div class="min-w-0">
-              <h4 class="font-bold text-xs text-white truncate">${u.fullname}</h4>
-              <p class="text-[10px] text-brand-500 font-mono truncate">@${u.username}</p>
-            </div>
-          </div>
-          <button onclick="promptCallConfirm('${u.username}', '${u.fullname}')" class="bg-gradient-to-r from-brand-600 to-emerald-600 hover:from-brand-500 hover:to-emerald-500 text-slate-950 font-black text-xs px-3.5 py-2 rounded-xl shadow transition-all flex items-center gap-1.5 flex-shrink-0">
-            <i class="fa-solid fa-video text-[11px]"></i>
-            <span>اتصال فيديو</span>
-          </button>
-        </div>
-      `).join('');
-    }
-
-    function filterUserDirectory() {
-      renderDirectoryList();
-    }
-
-    // Demo Users Generator
-    function addDemoAccounts() {
-      let users = getRegisteredUsers();
-      const demos = [
-        { fullname: 'سارة العلمي', username: 'sara_v', password: '123', avatar: 'https://placehold.co/100x100/1e293b/38bdf8?text=Sara' },
-        { fullname: 'عمر المختار', username: 'omar_m', password: '123', avatar: 'https://placehold.co/100x100/1e293b/f43f5e?text=Omar' },
-        { fullname: 'ريم خالد', username: 'reem_k', password: '123', avatar: 'https://placehold.co/100x100/1e293b/a855f7?text=Reem' }
-      ];
-
-      demos.forEach(d => {
-        if (!users.some(u => u.username === d.username)) {
-          users.push(d);
-        }
-      });
-
-      saveUsers(users);
-      renderDirectoryList();
-      showToast('تمت إضافة حسابات تجريبية لقائمة المشتركين.', 'success');
-    }
-
-    // PeerJS Connection Init
-    function initPeerJSConnection() {
-      peer = new Peer(currentUser.username, { debug: 1 });
-
-      peer.on('open', (id) => {
-        console.log('Connected to PeerJS Signaling Server:', id);
-      });
-
-      peer.on('call', (call) => {
-        pendingIncomingCall = call;
-        const callerId = call.peer;
-
-        let users = getRegisteredUsers();
-        let callerObj = users.find(u => u.username === callerId);
-        let displayName = callerObj ? callerObj.fullname : callerId;
-
-        document.getElementById('incoming-caller-id').innerText = `${displayName} (@${callerId})`;
-        document.getElementById('incoming-modal').classList.remove('hidden');
-      });
-
-      peer.on('error', (err) => {
-        console.error('PeerJS error:', err);
-        if (err.type === 'unavailable-id') {
-          showToast('هذا الحساب متصل حالياً في نافذة أخرى.', 'error');
-        }
       });
     }
 
-    // Confirm Call Prompt Modal
-    function promptCallConfirm(targetUsername, targetFullname) {
-      selectedCallTarget = { username: targetUsername, fullname: targetFullname };
-      document.getElementById('confirm-user-text').innerText = `هل تريد التواصل مع حساب ${targetFullname} (@${targetUsername})؟`;
-      
-      const btnOk = document.getElementById('btn-start-call-ok');
-      btnOk.onclick = () => {
-        closeConfirmModal();
-        startCall(selectedCallTarget.username, selectedCallTarget.fullname);
+    function filterUsers() {
+      const q = document.getElementById('searchInput').value.toLowerCase();
+      const items = document.querySelectorAll('#usersList > div');
+      items.forEach(item => {
+        const name = item.querySelector('h5').innerText.toLowerCase();
+        item.style.display = name.includes(q) ? 'flex' : 'none';
+      });
+    }
+
+    function openChat(username) {
+      selectedChatUser = allUsers.find(u => u.username === username);
+      document.getElementById('noChatSelected').classList.add('hidden');
+      document.getElementById('activeChatBox').classList.remove('hidden');
+
+      document.getElementById('chatUsername').innerText = selectedChatUser.username;
+      document.getElementById('chatUserAvatar').src = selectedChatUser.avatar;
+
+      renderMessages();
+    }
+
+    function sendMessage() {
+      const input = document.getElementById('msgInput');
+      const text = input.value.trim();
+      if(!text || !selectedChatUser) return;
+
+      const chatKey = [currentUser.username, selectedChatUser.username].sort().join('_');
+      if(!messages[chatKey]) messages[chatKey] = [];
+
+      messages[chatKey].push({ sender: currentUser.username, text: text, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) });
+      localStorage.setItem('ze_messages', JSON.stringify(messages));
+
+      input.value = '';
+      renderMessages();
+    }
+
+    function sendImage(e) {
+      const file = e.target.files[0];
+      if(!file || !selectedChatUser) return;
+
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        const chatKey = [currentUser.username, selectedChatUser.username].sort().join('_');
+        if(!messages[chatKey]) messages[chatKey] = [];
+
+        messages[chatKey].push({ sender: currentUser.username, img: evt.target.result, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) });
+        localStorage.setItem('ze_messages', JSON.stringify(messages));
+        renderMessages();
       };
-
-      document.getElementById('confirm-call-modal').classList.remove('hidden');
+      reader.readAsDataURL(file);
     }
 
-    function closeConfirmModal() {
-      document.getElementById('confirm-call-modal').classList.add('hidden');
-      selectedCallTarget = null;
-    }
+    function renderMessages() {
+      if(!selectedChatUser) return;
+      const area = document.getElementById('messagesArea');
+      area.innerHTML = '';
 
-    // Media Streams Handling
-    async function acquireLocalStream() {
-      if (localStream) return localStream;
-      try {
-        localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-        document.getElementById('local-video').srcObject = localStream;
-        return localStream;
-      } catch (err) {
-        showToast('يرجى السماح بالوصول للكاميرا والميكروفون لإكمال الاتصال.', 'error');
-        throw err;
-      }
-    }
+      const chatKey = [currentUser.username, selectedChatUser.username].sort().join('_');
+      const chatMsgs = messages[chatKey] || [];
 
-    function stopLocalStream() {
-      if (localStream) {
-        localStream.getTracks().forEach(track => track.stop());
-        localStream = null;
-      }
-    }
-
-    // Start Video Call
-    async function startCall(targetUsername, targetFullname) {
-      try {
-        const stream = await acquireLocalStream();
-        showCallUI(targetFullname);
-
-        activeCall = peer.call(targetUsername, stream);
-        attachCallEvents(activeCall);
-      } catch (err) {
-        console.error('Failed to initiate call:', err);
-      }
-    }
-
-    // Accept Incoming Call
-    async function acceptIncomingCall() {
-      document.getElementById('incoming-modal').classList.add('hidden');
-      if (!pendingIncomingCall) return;
-
-      try {
-        const stream = await acquireLocalStream();
-        pendingIncomingCall.answer(stream);
-
-        showCallUI(pendingIncomingCall.peer);
-        attachCallEvents(pendingIncomingCall);
-        activeCall = pendingIncomingCall;
-      } catch (err) {
-        showToast('فشل القبول، تأكد من تصاريح الكاميرا.', 'error');
-      }
-    }
-
-    // Decline Incoming Call
-    function declineIncomingCall() {
-      document.getElementById('incoming-modal').classList.add('hidden');
-      if (pendingIncomingCall) {
-        pendingIncomingCall.close();
-        pendingIncomingCall = null;
-      }
-      showToast('تم رفض المكالمة.', 'info');
-    }
-
-    // Attach Stream Events
-    function attachCallEvents(call) {
-      call.on('stream', (remoteStream) => {
-        document.getElementById('remote-placeholder').classList.add('hidden');
-        document.getElementById('remote-video').srcObject = remoteStream;
+      chatMsgs.forEach(m => {
+        const isMe = m.sender === currentUser.username;
+        area.innerHTML += `
+          <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'}">
+            <div class="max-w-[75%] p-3 rounded-2xl text-xs ${isMe ? 'bg-brand-600 text-white rounded-br-none' : 'bg-dark-900 border border-gray-800 text-gray-200 rounded-bl-none'}">
+              ${m.text ? m.text : `<img src="${m.img}" class="rounded-lg max-w-full">`}
+            </div>
+            <span class="text-[9px] text-gray-500 mt-1 px-1">${m.time}</span>
+          </div>
+        `;
       });
-
-      call.on('close', () => {
-        resetCallUI();
-        showToast('انتهت المكالمة المرئية.', 'info');
-      });
-
-      call.on('error', (err) => {
-        showToast('حدث خطأ في جودة الاتصال.', 'error');
-        resetCallUI();
-      });
+      area.scrollTop = area.scrollHeight;
     }
 
-    // End Active Call
-    function hangUpCall() {
-      if (activeCall) {
-        activeCall.close();
-      }
-      resetCallUI();
+    function startCall(type) {
+      if(!selectedChatUser) return;
+      showCallModal(selectedChatUser.username);
+
+      navigator.mediaDevices.getUserMedia({ video: type === 'video', audio: true }).then(stream => {
+        localStream = stream;
+        document.getElementById('localVideo').srcObject = stream;
+
+        const call = peer.call(selectedChatUser.username.toLowerCase(), stream);
+        call.on('stream', remoteStream => {
+          document.getElementById('remoteVideo').srcObject = remoteStream;
+        });
+        activeCall = call;
+      }).catch(() => alert('يرجى إعطاء صلاحية الكاميرا والميكروفون'));
     }
 
-    // UI Updates During Call
-    function showCallUI(targetDisplayName) {
-      document.getElementById('call-idle-state').classList.add('hidden');
-      document.getElementById('call-active-state').classList.remove('hidden');
-      document.getElementById('call-active-state').classList.add('flex');
-
-      document.getElementById('call-target-name').innerText = `متصل مع: ${targetDisplayName}`;
-      startTimer();
+    function showCallModal(targetName) {
+      document.getElementById('callTargetName').innerText = targetName;
+      document.getElementById('videoCallModal').classList.remove('hidden');
     }
 
-    function resetCallUI() {
-      stopLocalStream();
-      stopTimer();
-
-      document.getElementById('remote-video').srcObject = null;
-      document.getElementById('local-video').srcObject = null;
-      document.getElementById('remote-placeholder').classList.remove('hidden');
-
-      document.getElementById('call-active-state').classList.add('hidden');
-      document.getElementById('call-active-state').classList.remove('flex');
-      document.getElementById('call-idle-state').classList.remove('hidden');
-
-      activeCall = null;
-      pendingIncomingCall = null;
+    function endCall() {
+      if(activeCall) activeCall.close();
+      if(localStream) localStream.getTracks().forEach(t => t.stop());
+      document.getElementById('videoCallModal').classList.add('hidden');
     }
 
-    // In-Call Mic & Camera Toggles
-    function toggleAudio() {
-      if (!localStream) return;
-      const audioTrack = localStream.getAudioTracks()[0];
-      if (audioTrack) {
-        isMicOn = !isMicOn;
-        audioTrack.enabled = isMicOn;
-
-        const btn = document.getElementById('btn-toggle-mic');
-        btn.innerHTML = isMicOn ? '<i class="fa-solid fa-microphone text-sm"></i>' : '<i class="fa-solid fa-microphone-slash text-sm"></i>';
-        btn.className = isMicOn ? 'w-11 h-11 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center justify-center transition-all' : 'w-11 h-11 rounded-xl bg-rose-600 text-white flex items-center justify-center transition-all';
+    function toggleMute() {
+      if(localStream) {
+        const audioTrack = localStream.getAudioTracks()[0];
+        audioTrack.enabled = !audioTrack.enabled;
+        document.getElementById('muteBtn').classList.toggle('bg-red-600');
       }
     }
 
-    function toggleVideo() {
-      if (!localStream) return;
-      const videoTrack = localStream.getVideoTracks()[0];
-      if (videoTrack) {
-        isCamOn = !isCamOn;
-        videoTrack.enabled = isCamOn;
-
-        const btn = document.getElementById('btn-toggle-cam');
-        btn.innerHTML = isCamOn ? '<i class="fa-solid fa-video text-sm"></i>' : '<i class="fa-solid fa-video-slash text-sm"></i>';
-        btn.className = isCamOn ? 'w-11 h-11 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center justify-center transition-all' : 'w-11 h-11 rounded-xl bg-rose-600 text-white flex items-center justify-center transition-all';
+    function toggleCamera() {
+      if(localStream && localStream.getVideoTracks().length > 0) {
+        const videoTrack = localStream.getVideoTracks()[0];
+        videoTrack.enabled = !videoTrack.enabled;
+        document.getElementById('camBtn').classList.toggle('bg-red-600');
       }
     }
 
-    // Timer Logic
-    function startTimer() {
-      secondsCount = 0;
-      clearInterval(callTimer);
-      callTimer = setInterval(() => {
-        secondsCount++;
-        const mins = String(Math.floor(secondsCount / 60)).padStart(2, '0');
-        const secs = String(secondsCount % 60).padStart(2, '0');
-        document.getElementById('call-duration').innerText = `${mins}:${secs}`;
-      }, 1000);
-    }
-
-    function stopTimer() {
-      clearInterval(callTimer);
-      document.getElementById('call-duration').innerText = '00:00';
-    }
-
-    // Support Modal & WhatsApp Dispatcher
-    function openSupportModal() {
-      document.getElementById('support-modal').classList.remove('hidden');
-    }
-
-    function closeSupportModal() {
-      document.getElementById('support-modal').classList.add('hidden');
-    }
-
-    function sendSupportToWhatsApp() {
-      const msgText = document.getElementById('support-message').value.trim();
-      if (!msgText) {
-        showToast('يرجى كتابة تفاصيل الرسالة قبل الإرسال.', 'error');
-        return;
-      }
-
-      const senderInfo = currentUser ? `المستخدم: ${currentUser.fullname} (@${currentUser.username})` : 'زائر المنصة';
-      const formattedMessage = encodeURIComponent(`*طلب دعم - تطبيق Ze Video*\n\n${senderInfo}\n\n*الرسالة:*\n${msgText}`);
-      
-      const whatsappUrl = `https://wa.me/${SUPPORT_WHATSAPP_NUMBER.replace('+', '')}?text=${formattedMessage}`;
-      window.open(whatsappUrl, '_blank');
-      
-      closeSupportModal();
-      document.getElementById('support-message').value = '';
-      showToast('جاري فتح الواتساب لإرسال استفسارك لفريق الدعم.', 'success');
+    function logout() {
+      localStorage.removeItem('ze_logged_user');
+      location.reload();
     }
   </script>
 </body>
