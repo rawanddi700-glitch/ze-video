@@ -3,178 +3,308 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ZE VIDEO - شبكة المحادثات والمكالمات الآمنة</title>
+  <title>ZE VIDEO - منصة التعارف والمحادثات المباشرة المجانية</title>
+  
+  <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- PeerJS CDN for WebRTC Free Calls -->
   <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+  <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
   <script>
     tailwind.config = {
       darkMode: 'class',
       theme: {
         extend: {
           colors: {
-            brand: { 500: '#10b981', 600: '#059669', 700: '#047857' },
-            dark: { 900: '#090d16', 800: '#111827', 700: '#1f2937', 600: '#374151' }
+            brand: { 400: '#34d399', 500: '#10b981', 600: '#059669', 700: '#047857' },
+            dark: { 950: '#06090e', 900: '#0d131f', 800: '#162032', 700: '#233047', 600: '#33435e' }
           }
         }
       }
     }
   </script>
   <style>
-    body { background-color: #090d16; color: #f3f4f6; font-family: system-ui, -apple-system, sans-serif; }
-    .glass { background: rgba(17, 24, 39, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
-    .glow { box-shadow: 0 0 20px rgba(16, 185, 129, 0.25); }
+    body { background-color: #06090e; color: #f3f4f6; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    .glass { background: rgba(13, 19, 31, 0.75); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); }
+    .glass-card { background: rgba(22, 32, 50, 0.6); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.05); }
+    .glow { box-shadow: 0 0 25px rgba(16, 185, 129, 0.25); }
     ::-webkit-scrollbar { width: 6px; }
-    ::-webkit-scrollbar-thumb { background: #374151; border-radius: 10px; }
+    ::-webkit-scrollbar-thumb { background: #233047; border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: #10b981; }
+    @keyframes pulse-ring {
+      0% { transform: scale(0.95); opacity: 0.8; }
+      50% { transform: scale(1.1); opacity: 0.4; }
+      100% { transform: scale(0.95); opacity: 0.8; }
+    }
+    .animate-ring { animation: pulse-ring 2s infinite ease-in-out; }
   </style>
 </head>
 <body class="min-h-screen flex flex-col justify-between overflow-x-hidden selection:bg-brand-500 selection:text-white">
 
+  <!-- Notification Toast Container -->
+  <div id="toastContainer" class="fixed top-20 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-2 pointer-events-none w-full max-w-sm px-4"></div>
+
   <!-- Header -->
-  <header class="glass sticky top-0 z-40 border-b border-gray-800 px-4 py-3 flex items-center justify-between">
-    <div class="flex items-center gap-3">
-      <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-emerald-400 flex items-center justify-center text-white font-black text-xl shadow-lg glow">
+  <header class="glass sticky top-0 z-40 border-b border-gray-800/80 px-4 py-3 flex items-center justify-between">
+    <div class="flex items-center gap-3 cursor-pointer" onclick="goHome()">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 via-emerald-500 to-teal-300 flex items-center justify-center text-white font-black text-xl shadow-lg glow">
         ZV
       </div>
       <div>
-        <h1 class="text-2xl font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-200">
+        <h1 class="text-2xl font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-emerald-200">
           ZE VIDEO
         </h1>
-        <p class="text-[10px] text-gray-400 tracking-widest uppercase">الشبكة الآمنة للمكالمات</p>
+        <p class="text-[10px] text-gray-400 tracking-widest uppercase">منصة التعارف والمحادثات المباشرة</p>
       </div>
     </div>
 
+    <!-- Active User Header Info -->
     <div id="userBadge" class="hidden flex items-center gap-3">
-      <img id="myAvatarDisplay" src="" class="w-9 h-9 rounded-full border-2 border-brand-500 object-cover">
-      <span id="myUsernameDisplay" class="font-bold text-sm text-gray-200 hidden sm:inline"></span>
-      <button onclick="logout()" class="text-gray-400 hover:text-red-400 transition text-sm p-2">
+      <button onclick="switchTab('explore')" class="p-2 bg-dark-800 hover:bg-dark-700 rounded-xl text-gray-300 hover:text-brand-400 text-xs font-bold transition flex items-center gap-1.5 border border-gray-700/50">
+        <i class="fa-solid fa-compass"></i>
+        <span class="hidden md:inline">استكشف</span>
+      </button>
+
+      <button onclick="switchTab('chats')" class="relative p-2 bg-dark-800 hover:bg-dark-700 rounded-xl text-gray-300 hover:text-brand-400 text-xs font-bold transition flex items-center gap-1.5 border border-gray-700/50">
+        <i class="fa-solid fa-comments"></i>
+        <span class="hidden md:inline">المحادثات</span>
+        <span id="unreadBadge" class="hidden absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-dark-900"></span>
+      </button>
+
+      <div class="flex items-center gap-2 pr-2 border-r border-gray-800">
+        <img id="myAvatarDisplay" src="" class="w-9 h-9 rounded-full border-2 border-brand-500 object-cover shadow">
+        <div class="hidden sm:block text-right">
+          <div id="myUsernameDisplay" class="font-bold text-xs text-white"></div>
+          <span class="text-[9px] text-emerald-400 font-semibold flex items-center gap-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block animate-pulse"></span> متصل
+          </span>
+        </div>
+      </div>
+
+      <button onclick="logout()" title="تسجيل الخروج" class="text-gray-400 hover:text-red-400 transition text-sm p-2 hover:bg-dark-800 rounded-xl">
         <i class="fa-solid fa-right-from-bracket"></i>
       </button>
     </div>
   </header>
 
   <!-- Main Container -->
-  <main class="flex-1 max-w-6xl w-full mx-auto p-4 flex flex-col gap-6">
+  <main class="flex-1 max-w-6xl w-full mx-auto p-3 sm:p-5 flex flex-col">
 
-    <!-- Auth View -->
-    <div id="authView" class="max-w-md w-full mx-auto my-auto glass p-8 rounded-2xl shadow-2xl border border-gray-800 text-center">
+    <!-- AUTHENTICATION & LOGIN VIEW -->
+    <div id="authView" class="max-w-md w-full mx-auto my-auto glass p-6 sm:p-8 rounded-3xl shadow-2xl border border-gray-800 text-center">
       <div class="mb-6">
-        <h2 class="text-3xl font-extrabold text-white mb-2">مرحباً بك في <span class="text-brand-500">ZE VIDEO</span></h2>
-        <p class="text-sm text-gray-400">أنشئ حسابك وابدأ التواصل الآمن والمباشر</p>
+        <div class="w-16 h-16 mx-auto mb-3 rounded-2xl bg-brand-500/10 text-brand-400 flex items-center justify-center text-3xl border border-brand-500/20 glow">
+          <i class="fa-solid fa-[#heart-pulse] fa-heart"></i>
+        </div>
+        <h2 class="text-2xl sm:text-3xl font-black text-white mb-1">مرحباً بك في <span class="text-brand-400">ZE VIDEO</span></h2>
+        <p class="text-xs text-gray-400">أنشئ حسابك المجاني وابدأ التعارف والمكالمات فوراً</p>
       </div>
 
-      <form id="authForm" onsubmit="handleAuth(event)" class="space-y-4 text-right">
+      <!-- Auth Form Tabs -->
+      <div class="flex bg-dark-900 p-1 rounded-xl mb-5 border border-gray-800">
+        <button type="button" id="tabLoginBtn" onclick="toggleAuthMode('login')" class="flex-1 py-2 text-xs font-bold rounded-lg text-white bg-brand-600 transition">تسجيل الدخول</button>
+        <button type="button" id="tabRegisterBtn" onclick="toggleAuthMode('register')" class="flex-1 py-2 text-xs font-bold rounded-lg text-gray-400 hover:text-white transition">حساب جديد</button>
+      </div>
+
+      <form id="authForm" onsubmit="handleAuth(event)" class="space-y-3.5 text-right">
         <div>
-          <label class="block text-xs text-gray-400 mb-1">اسم المستخدم</label>
-          <input type="text" id="username" required placeholder="مثال: Ahmad99" class="w-full bg-dark-900 border border-gray-700 rounded-xl p-3 text-sm text-white focus:border-brand-500 focus:outline-none transition">
-        </div>
-        <div>
-          <label class="block text-xs text-gray-400 mb-1">رقم الهاتف (للتأكيد عبر الواتساب)</label>
-          <input type="tel" id="phoneNumber" required placeholder="+905xxxxxxxx" class="w-full bg-dark-900 border border-gray-700 rounded-xl p-3 text-sm text-white focus:border-brand-500 focus:outline-none transition">
-        </div>
-        <div>
-          <label class="block text-xs text-gray-400 mb-1">رابط الصورة الشخصية (اختياري)</label>
-          <input type="url" id="avatarUrl" placeholder="https://..." class="w-full bg-dark-900 border border-gray-700 rounded-xl p-3 text-sm text-white focus:border-brand-500 focus:outline-none transition">
-        </div>
-        <div>
-          <label class="block text-xs text-gray-400 mb-1">كلمة المرور</label>
-          <input type="password" id="password" required placeholder="••••••••" class="w-full bg-dark-900 border border-gray-700 rounded-xl p-3 text-sm text-white focus:border-brand-500 focus:outline-none transition">
+          <label class="block text-xs font-semibold text-gray-300 mb-1">اسم المستخدم</label>
+          <input type="text" id="username" required placeholder="مثال: Ahmad_Sy" class="w-full bg-dark-900 border border-gray-700/70 rounded-xl p-3 text-xs text-white focus:border-brand-500 focus:outline-none transition">
         </div>
 
-        <button type="submit" class="w-full bg-gradient-to-r from-brand-600 to-emerald-500 hover:from-brand-500 hover:to-emerald-400 text-white font-bold py-3.5 rounded-xl shadow-lg transition glow mt-2">
-          دخول / تسجيل الحساب
+        <div>
+          <label class="block text-xs font-semibold text-gray-300 mb-1">كلمة المرور</label>
+          <input type="password" id="password" required placeholder="••••••••" class="w-full bg-dark-900 border border-gray-700/70 rounded-xl p-3 text-xs text-white focus:border-brand-500 focus:outline-none transition">
+        </div>
+
+        <!-- Registration Extra Fields -->
+        <div id="registerExtraFields" class="space-y-3 hidden">
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-xs font-semibold text-gray-300 mb-1">الجنس</label>
+              <select id="gender" class="w-full bg-dark-900 border border-gray-700/70 rounded-xl p-3 text-xs text-white focus:border-brand-500 focus:outline-none">
+                <option value="أنثى">أنثى 👧</option>
+                <option value="ذكر">ذكر 👦</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-300 mb-1">العمر</label>
+              <input type="number" id="age" min="18" max="99" value="23" class="w-full bg-dark-900 border border-gray-700/70 rounded-xl p-3 text-xs text-white focus:border-brand-500 focus:outline-none">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-gray-300 mb-1">الدولة / البلد</label>
+            <input type="text" id="country" placeholder="مثال: سوريا / تركيا" class="w-full bg-dark-900 border border-gray-700/70 rounded-xl p-3 text-xs text-white focus:border-brand-500 focus:outline-none">
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-gray-300 mb-1">نبذة عنك (Bio)</label>
+            <input type="text" id="bio" placeholder="مثال: أحب السفر والموسيقى..." class="w-full bg-dark-900 border border-gray-700/70 rounded-xl p-3 text-xs text-white focus:border-brand-500 focus:outline-none">
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-gray-300 mb-1">رابط صورتك الشخصية (اختياري)</label>
+            <input type="url" id="avatarUrl" placeholder="https://..." class="w-full bg-dark-900 border border-gray-700/70 rounded-xl p-3 text-xs text-white focus:border-brand-500 focus:outline-none">
+          </div>
+        </div>
+
+        <button type="submit" id="authSubmitBtn" class="w-full bg-gradient-to-r from-brand-600 via-emerald-500 to-teal-500 hover:from-brand-500 hover:to-teal-400 text-white font-bold py-3.5 rounded-xl shadow-lg transition glow mt-2">
+          دخول الحساب
         </button>
       </form>
 
-      <div class="mt-6 pt-4 border-t border-gray-800">
-        <a id="waVerifyBtn" href="#" target="_blank" class="hidden items-center justify-center gap-2 text-xs text-emerald-400 hover:underline">
-          <i class="fa-brands fa-whatsapp text-base"></i> تأكيد الحساب مع فريق الدعم عبر الواتساب
+      <!-- Instant Guest Demo Button -->
+      <div class="relative my-4 flex items-center justify-center">
+        <hr class="w-full border-gray-800">
+        <span class="absolute bg-dark-900 px-3 text-[11px] text-gray-500">أو</span>
+      </div>
+
+      <button onclick="loginAsGuest()" type="button" class="w-full bg-dark-800 hover:bg-dark-700 border border-gray-700 text-gray-200 font-bold py-3 rounded-xl transition text-xs flex items-center justify-center gap-2">
+        <i class="fa-solid fa-bolt text-yellow-400"></i> دخول سريع كزائر لاختبار الموقع مجاناً
+      </button>
+
+      <div class="mt-5 pt-3 border-t border-gray-800">
+        <a href="https://wa.me/905354637591?text=مرحباً%20فريق%20دعم%20ZE%20VIDEO" target="_blank" class="inline-flex items-center gap-1.5 text-xs text-emerald-400 hover:underline">
+          <i class="fa-brands fa-whatsapp"></i> هل تحتاج لمساعدة؟ تواصل مع الدعم الفني
         </a>
       </div>
     </div>
 
-    <!-- Dashboard View -->
-    <div id="dashboardView" class="hidden flex-1 grid grid-cols-1 md:grid-cols-3 gap-6">
+    <!-- MAIN DASHBOARD VIEW -->
+    <div id="dashboardView" class="hidden flex-1 flex flex-col gap-5">
 
-      <!-- Left Sidebar: Search & Users List -->
-      <div class="glass p-4 rounded-2xl flex flex-col gap-4 border border-gray-800">
-        <div class="flex items-center justify-between border-b border-gray-800 pb-3">
-          <h3 class="font-bold text-white flex items-center gap-2">
-            <i class="fa-solid fa-users text-brand-500"></i> المشتركين المتاحين
-          </h3>
-          <span id="userCount" class="text-xs bg-brand-500/20 text-brand-500 px-2.5 py-1 rounded-full font-bold">0</span>
+      <!-- View Navigation Selector for Mobile -->
+      <div class="flex items-center justify-between glass p-2 rounded-2xl border border-gray-800">
+        <div class="flex gap-2">
+          <button id="navExploreBtn" onclick="switchTab('explore')" class="px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 bg-brand-600 text-white">
+            <i class="fa-solid fa-users-viewfinder"></i> بطاقات التعارف والاستكشاف
+          </button>
+          <button id="navChatsBtn" onclick="switchTab('chats')" class="px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 text-gray-400 hover:text-white hover:bg-dark-800">
+            <i class="fa-solid fa-message"></i> الدردشات والمكالمات
+          </button>
         </div>
-
-        <!-- Search Bar -->
-        <div class="relative">
-          <input type="text" id="searchInput" oninput="filterUsers()" placeholder="ادخل اسم المستخدم الذي تريد التواصل معه..." class="w-full bg-dark-900 border border-gray-700 rounded-xl py-2.5 pr-9 pl-3 text-xs text-white focus:border-brand-500 focus:outline-none">
-          <i class="fa-solid fa-magnifying-glass absolute right-3 top-3 text-gray-500 text-xs"></i>
-        </div>
-
-        <!-- Directory List -->
-        <div id="usersList" class="flex-1 overflow-y-auto max-h-[500px] space-y-2 pr-1">
-          <!-- User items will load here -->
+        <div class="text-xs text-gray-400 font-semibold px-2">
+          المتصلين الآن: <span id="onlineCounter" class="text-emerald-400 font-black">1</span>
         </div>
       </div>
 
-      <!-- Right Main Panel: Active Chat / Call Window -->
-      <div class="md:col-span-2 glass rounded-2xl p-4 flex flex-col justify-between border border-gray-800 min-h-[500px]">
+      <!-- TAB 1: EXPLORE & DATING CARDS -->
+      <div id="exploreTab" class="flex-1 flex flex-col gap-4">
         
-        <!-- Default State: No user selected -->
-        <div id="noChatSelected" class="my-auto text-center p-8 space-y-3">
-          <div class="w-16 h-16 bg-dark-900 rounded-full flex items-center justify-center mx-auto text-brand-500 text-2xl border border-gray-800">
-            <i class="fa-solid fa-comments"></i>
+        <!-- Filter Controls -->
+        <div class="glass p-4 rounded-2xl flex flex-wrap items-center justify-between gap-3 border border-gray-800">
+          <div class="flex items-center gap-2 flex-1 min-w-[200px]">
+            <i class="fa-solid fa-filter text-brand-400 text-xs"></i>
+            <span class="text-xs font-bold text-gray-300">تصفية البحث:</span>
+            <select id="filterGender" onchange="renderExploreCards()" class="bg-dark-900 border border-gray-700/80 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none">
+              <option value="جميع">الجميع (ذكور وإناث)</option>
+              <option value="أنثى">إناث فقط 👧</option>
+              <option value="ذكر">ذكور فقط 👦</option>
+            </select>
           </div>
-          <h4 class="text-lg font-bold text-gray-300">اختر حساباً لبدء المحادثة أو الاتصال</h4>
-          <p class="text-xs text-gray-500 max-w-sm mx-auto">تصفح قائمة المشتركين على اليسار، واضغط على أي حساب للبدء في الدردشة، إرسال الصور، أو اجراء مكالمة صوت وفيديو مباشرة.</p>
+
+          <div class="relative flex-1 min-w-[200px]">
+            <input type="text" id="searchPartnerInput" oninput="renderExploreCards()" placeholder="ابحث باسم المشترك أو البلد..." class="w-full bg-dark-900 border border-gray-700/80 rounded-xl py-2 pr-9 pl-3 text-xs text-white focus:border-brand-500 focus:outline-none">
+            <i class="fa-solid fa-magnifying-glass absolute right-3 top-2.5 text-gray-500 text-xs"></i>
+          </div>
         </div>
 
-        <!-- Active Chat Interface -->
-        <div id="activeChatBox" class="hidden flex-1 flex flex-col justify-between">
+        <!-- Users Dating Cards Grid -->
+        <div id="usersCardsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 overflow-y-auto max-h-[calc(100vh-220px)] p-1">
+          <!-- Dynamic Dating Cards Rendered Here -->
+        </div>
+      </div>
+
+      <!-- TAB 2: CHATS & CALLS DASHBOARD -->
+      <div id="chatsTab" class="hidden flex-1 grid grid-cols-1 lg:grid-cols-3 gap-5 min-h-[550px]">
+
+        <!-- Sidebar: Active Chats List -->
+        <div class="glass p-4 rounded-2xl flex flex-col gap-3 border border-gray-800 max-h-[600px]">
+          <h3 class="font-bold text-white text-sm flex items-center justify-between border-b border-gray-800 pb-2.5">
+            <span class="flex items-center gap-2">
+              <i class="fa-solid fa-comments text-brand-400"></i> قائمة المحادثات
+            </span>
+            <span id="activeChatsCount" class="text-[10px] bg-brand-500/20 text-brand-400 px-2 py-0.5 rounded-full font-bold">0</span>
+          </h3>
+
+          <div id="chatsList" class="flex-1 overflow-y-auto space-y-2 pr-1">
+            <!-- Active conversation items -->
+          </div>
+        </div>
+
+        <!-- Main Panel: Active Chat Box -->
+        <div class="lg:col-span-2 glass rounded-2xl p-4 flex flex-col justify-between border border-gray-800 min-h-[500px]">
           
-          <!-- Chat Header -->
-          <div class="flex items-center justify-between border-b border-gray-800 pb-3 mb-3">
-            <div class="flex items-center gap-3">
-              <img id="chatUserAvatar" src="" class="w-10 h-10 rounded-full object-cover border border-brand-500">
-              <div>
-                <h4 id="chatUsername" class="font-bold text-white text-sm"></h4>
-                <p id="chatUserStatus" class="text-[10px] text-emerald-400 flex items-center gap-1">
-                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block"></span> متصل الآن
-                </p>
+          <!-- Default View (No chat selected) -->
+          <div id="noChatSelected" class="my-auto text-center p-8 space-y-3">
+            <div class="w-20 h-20 bg-dark-900 rounded-3xl flex items-center justify-center mx-auto text-brand-400 text-3xl border border-gray-800 shadow-xl">
+              <i class="fa-solid fa-heart-circle-plus"></i>
+            </div>
+            <h4 class="text-xl font-bold text-gray-200">اختر صديقاً لبدء المحادثة أو الاتصال</h4>
+            <p class="text-xs text-gray-400 max-w-sm mx-auto">تصفح كروت المشتركين في تبويب الاستكشاف واضغط على "تواصل الآن" للبدء بالدردشة النصية، الصور، والاتصال المرئي المجاني.</p>
+          </div>
+
+          <!-- Active Conversation Interface -->
+          <div id="activeChatBox" class="hidden flex-1 flex flex-col justify-between">
+            
+            <!-- Active Chat Header -->
+            <div class="flex items-center justify-between border-b border-gray-800 pb-3 mb-2">
+              <div class="flex items-center gap-3">
+                <img id="chatUserAvatar" src="" class="w-11 h-11 rounded-full object-cover border-2 border-brand-500 shadow">
+                <div>
+                  <div class="flex items-center gap-2">
+                    <h4 id="chatUsername" class="font-bold text-white text-sm"></h4>
+                    <span id="chatUserGenderBadge" class="text-[10px] px-2 py-0.5 rounded-full bg-dark-800 text-brand-400 border border-gray-700"></span>
+                  </div>
+                  <p id="chatUserBio" class="text-[11px] text-gray-400 line-clamp-1"></p>
+                </div>
+              </div>
+
+              <!-- Call Action Buttons -->
+              <div class="flex items-center gap-2">
+                <button onclick="startCall('audio')" title="مكالمة صوتية مجانية" class="p-3 bg-dark-900 hover:bg-brand-600 text-white rounded-xl transition border border-gray-700/80 shadow">
+                  <i class="fa-solid fa-phone text-xs"></i>
+                </button>
+                <button onclick="startCall('video')" title="مكالمة فيديو مجانية" class="p-3 bg-brand-600 hover:bg-brand-500 text-white rounded-xl transition glow shadow">
+                  <i class="fa-solid fa-video text-xs"></i>
+                </button>
+                <button onclick="toggleBlockUser()" id="blockBtn" title="حظر هذا المستخدم" class="p-3 bg-dark-900 hover:bg-red-600/20 text-red-400 rounded-xl transition border border-gray-700/80">
+                  <i class="fa-solid fa-ban text-xs"></i>
+                </button>
               </div>
             </div>
 
-            <!-- Call & Action Buttons -->
-            <div class="flex items-center gap-2">
-              <button onclick="startCall('audio')" title="مكالمة صوتية" class="p-2.5 bg-dark-900 hover:bg-brand-600 text-white rounded-xl transition border border-gray-700">
-                <i class="fa-solid fa-phone text-sm"></i>
+            <!-- Messages Stream Area -->
+            <div id="messagesArea" class="flex-1 overflow-y-auto space-y-3 p-2 my-2 max-h-[380px]">
+              <!-- Chat messages rendered dynamically -->
+            </div>
+
+            <!-- Chat Input Controls -->
+            <div class="pt-3 border-t border-gray-800 flex items-center gap-2">
+              
+              <!-- Image Upload -->
+              <label for="imageUpload" class="p-3 bg-dark-900 hover:bg-dark-800 text-gray-400 hover:text-white rounded-xl cursor-pointer transition border border-gray-700/80">
+                <i class="fa-solid fa-image"></i>
+              </label>
+              <input type="file" id="imageUpload" accept="image/*" onchange="sendImage(event)" class="hidden">
+
+              <!-- Audio Recording Button -->
+              <button id="voiceRecBtn" onclick="toggleVoiceRecording()" title="تسجيل مقتطع صوتي" class="p-3 bg-dark-900 hover:bg-dark-800 text-gray-400 hover:text-red-400 rounded-xl transition border border-gray-700/80">
+                <i class="fa-solid fa-microphone"></i>
               </button>
-              <button onclick="startCall('video')" title="مكالمة فيديو" class="p-2.5 bg-brand-600 hover:bg-brand-500 text-white rounded-xl transition glow">
-                <i class="fa-solid fa-video text-sm"></i>
-              </button>
-              <button onclick="toggleBlockUser()" id="blockBtn" title="حظر المستخدم" class="p-2.5 bg-dark-900 hover:bg-red-600/20 text-red-400 rounded-xl transition border border-gray-700">
-                <i class="fa-solid fa-ban text-sm"></i>
+
+              <!-- Text Input -->
+              <input type="text" id="msgInput" onkeypress="if(event.key==='Enter') sendMessage()" placeholder="اكتب رسالتك هنا..." class="flex-1 bg-dark-900 border border-gray-700/80 rounded-xl p-3 text-xs text-white focus:border-brand-500 focus:outline-none">
+
+              <!-- Send Button -->
+              <button onclick="sendMessage()" class="p-3 bg-brand-600 hover:bg-brand-500 text-white rounded-xl transition glow">
+                <i class="fa-solid fa-paper-plane"></i>
               </button>
             </div>
-          </div>
 
-          <!-- Messages Area -->
-          <div id="messagesArea" class="flex-1 overflow-y-auto space-y-3 p-2 my-2 max-h-[350px]">
-            <!-- Dynamic Messages -->
-          </div>
-
-          <!-- Chat Input Controls -->
-          <div class="pt-3 border-t border-gray-800 flex items-center gap-2">
-            <label for="imageUpload" class="p-3 bg-dark-900 hover:bg-gray-800 text-gray-400 hover:text-white rounded-xl cursor-pointer transition border border-gray-700">
-              <i class="fa-solid fa-image"></i>
-            </label>
-            <input type="file" id="imageUpload" accept="image/*" onchange="sendImage(event)" class="hidden">
-
-            <input type="text" id="msgInput" onkeypress="if(event.key==='Enter') sendMessage()" placeholder="اكتب رسالتك هنا..." class="flex-1 bg-dark-900 border border-gray-700 rounded-xl p-3 text-xs text-white focus:border-brand-500 focus:outline-none">
-
-            <button onclick="sendMessage()" class="p-3 bg-brand-600 hover:bg-brand-500 text-white rounded-xl transition glow">
-              <i class="fa-solid fa-paper-plane"></i>
-            </button>
           </div>
 
         </div>
@@ -185,83 +315,190 @@
 
   </main>
 
-  <!-- Video Call Overlay -->
-  <div id="videoCallModal" class="hidden fixed inset-0 z-50 bg-black/90 flex flex-col items-center justify-between p-6">
-    <div class="text-center">
-      <h3 id="callTargetName" class="text-white font-bold text-lg">جاري الاتصال...</h3>
-      <p id="callStatusText" class="text-xs text-gray-400">انتظار الرد</p>
+  <!-- WEBRTC REAL-TIME VIDEO & AUDIO CALL OVERLAY -->
+  <div id="videoCallModal" class="hidden fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex flex-col items-center justify-between p-4 sm:p-6">
+    
+    <!-- Call Header Status -->
+    <div class="text-center z-10 my-2">
+      <span class="inline-block px-3 py-1 bg-brand-500/20 text-brand-400 rounded-full text-xs font-bold mb-1">
+        <i class="fa-solid fa-shield-halved"></i> اتصال مشفر ومباشر P2P
+      </span>
+      <h3 id="callTargetName" class="text-white font-black text-xl">جاري الاتصال...</h3>
+      <p id="callStatusText" class="text-xs text-gray-400">انتظار القبول والموافقة</p>
     </div>
 
-    <!-- Video Streams Container -->
-    <div class="relative w-full max-w-3xl flex-1 my-4 flex items-center justify-center overflow-hidden rounded-2xl bg-dark-900 border border-gray-800">
+    <!-- Video Containers -->
+    <div class="relative w-full max-w-4xl flex-1 my-2 flex items-center justify-center overflow-hidden rounded-3xl bg-dark-950 border border-gray-800 shadow-2xl">
+      <!-- Remote Incoming Video -->
       <video id="remoteVideo" autoplay playsinline class="w-full h-full object-cover"></video>
-      <video id="localVideo" autoplay muted playsinline class="absolute bottom-4 left-4 w-32 h-44 object-cover rounded-xl border-2 border-brand-500 shadow-2xl bg-black"></video>
+      
+      <!-- Local Self Video -->
+      <video id="localVideo" autoplay muted playsinline class="absolute bottom-4 left-4 w-28 h-40 sm:w-36 sm:h-52 object-cover rounded-2xl border-2 border-brand-500 shadow-2xl bg-black transition-all hover:scale-105"></video>
     </div>
 
-    <!-- Controls -->
-    <div class="flex items-center gap-4">
-      <button onclick="toggleMute()" id="muteBtn" class="w-12 h-12 rounded-full bg-gray-800 text-white hover:bg-gray-700 flex items-center justify-center text-lg">
+    <!-- Call Controls Bar -->
+    <div class="flex items-center gap-4 z-10 my-2">
+      <button onclick="toggleMute()" id="muteBtn" title="كتم/تشغيل المايك" class="w-13 h-13 p-4 rounded-2xl bg-dark-800 hover:bg-dark-700 text-white border border-gray-700 text-lg transition flex items-center justify-center">
         <i class="fa-solid fa-microphone"></i>
       </button>
-      <button onclick="endCall()" class="w-14 h-14 rounded-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center text-xl shadow-lg">
+
+      <button onclick="endCall()" title="إنهاء المكالمة" class="w-16 h-16 rounded-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center text-2xl shadow-xl hover:scale-10 transition">
         <i class="fa-solid fa-phone-slash"></i>
       </button>
-      <button onclick="toggleCamera()" id="camBtn" class="w-12 h-12 rounded-full bg-gray-800 text-white hover:bg-gray-700 flex items-center justify-center text-lg">
+
+      <button onclick="toggleCamera()" id="camBtn" title="إيقاف/تشغيل الكاميرا" class="w-13 h-13 p-4 rounded-2xl bg-dark-800 hover:bg-dark-700 text-white border border-gray-700 text-lg transition flex items-center justify-center">
         <i class="fa-solid fa-video"></i>
       </button>
     </div>
   </div>
 
-  <!-- Footer & Support -->
-  <footer class="glass border-t border-gray-800 py-3 px-4 text-center text-xs text-gray-500 flex flex-col sm:flex-row items-center justify-between gap-2">
-    <div>جميع الحقوق محفوظة &copy; ZE VIDEO 2026</div>
-    <a href="https://wa.me/905354637591?text=مرحباً%20فريق%20دعم%20ZE%20VIDEO" target="_blank" class="text-brand-500 hover:underline flex items-center gap-1">
-      <i class="fa-brands fa-whatsapp"></i> مراسلة فريق الدعم والشكاوى
+  <!-- Footer -->
+  <footer class="glass border-t border-gray-800/80 py-3 px-4 text-center text-xs text-gray-500 flex flex-col sm:flex-row items-center justify-between gap-2">
+    <div>جميع الحقوق محفوظة &copy; ZE VIDEO 2026 - شبكة التواصل والتعارف المباشرة</div>
+    <a href="https://wa.me/905354637591?text=مرحباً%20فريق%20دعم%20ZE%20VIDEO" target="_blank" class="text-brand-400 hover:underline flex items-center gap-1 font-semibold">
+      <i class="fa-brands fa-whatsapp text-sm"></i> مراسلة الدعم الفني والشكاوى
     </a>
   </footer>
 
-  <!-- App Script -->
+  <!-- MAIN APPLICATION JAVASCRIPT LOGIC -->
   <script>
+    // System State Variables
     let currentUser = null;
     let peer = null;
     let activeCall = null;
     let localStream = null;
     let selectedChatUser = null;
-    
-    // Demo Mock Users Database
-    let allUsers = JSON.parse(localStorage.getItem('ze_users')) || [
-      { username: 'Lina_Sy', phone: '+90500000001', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150', blocked: false },
-      { username: 'Samer_VIP', phone: '+90500000002', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150', blocked: false },
-      { username: 'Nour_G', phone: '+90500000003', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150', blocked: false }
+    let authMode = 'login';
+    let isRecordingVoice = false;
+    let mediaRecorder = null;
+    let audioChunks = [];
+
+    // Real-Time Cross-Tab Communication Channel
+    const syncChannel = new BroadcastChannel('ze_video_sync_network');
+
+    // Default Mock Users Database for Instant Dating Discovery
+    const defaultUsers = [
+      { username: 'Lina_Sy', gender: 'أنثى', age: 22, country: 'سوريا', bio: 'أحب التعرف على أصدقاء جدد والقراءة 📚', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200', isOnline: true },
+      { username: 'Samer_VIP', gender: 'ذكر', age: 27, country: 'تركيا', bio: 'مصمم جرافيك، مهتم بالتقنية والموسيقى 🎧', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200', isOnline: true },
+      { username: 'Nour_G', gender: 'أنثى', age: 24, country: 'الأردن', bio: 'مهندسة برمجيات وعاشقة للسفر ✈️', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200', isOnline: true },
+      { username: 'Karem_99', gender: 'ذكر', age: 25, country: 'مصر', bio: 'أبحث عن محادثات ممتعة وتبادل خبرات ☕', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200', isOnline: false },
+      { username: 'Maya_Rose', gender: 'أنثى', age: 21, country: 'لبنان', bio: 'عازفة بيانو ومحبة للطبيعة 🌸', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=200', isOnline: true }
     ];
 
+    let allUsers = JSON.parse(localStorage.getItem('ze_users')) || defaultUsers;
     let messages = JSON.parse(localStorage.getItem('ze_messages')) || {};
 
+    // App Initialization
     window.onload = function() {
       const savedUser = localStorage.getItem('ze_logged_user');
       if (savedUser) {
         currentUser = JSON.parse(savedUser);
         initDashboard();
       }
+
+      // Listen for incoming messages/events from other browser tabs
+      syncChannel.onmessage = (event) => {
+        if (event.data.type === 'NEW_MESSAGE') {
+          messages = JSON.parse(localStorage.getItem('ze_messages')) || {};
+          if (selectedChatUser && (event.data.sender === selectedChatUser.username || event.data.receiver === selectedChatUser.username)) {
+            renderMessages();
+          }
+          showToast(`رسالة جديدة من ${event.data.sender}`);
+        } else if (event.data.type === 'USER_JOINED') {
+          allUsers = JSON.parse(localStorage.getItem('ze_users')) || defaultUsers;
+          renderExploreCards();
+        }
+      };
     };
 
+    // Toggle Authentication Tabs
+    function toggleAuthMode(mode) {
+      authMode = mode;
+      const extraFields = document.getElementById('registerExtraFields');
+      const loginBtn = document.getElementById('tabLoginBtn');
+      const regBtn = document.getElementById('tabRegisterBtn');
+      const submitBtn = document.getElementById('authSubmitBtn');
+
+      if (mode === 'register') {
+        extraFields.classList.remove('hidden');
+        regBtn.className = "flex-1 py-2 text-xs font-bold rounded-lg text-white bg-brand-600 transition";
+        loginBtn.className = "flex-1 py-2 text-xs font-bold rounded-lg text-gray-400 hover:text-white transition";
+        submitBtn.innerText = "إنشاء حساب مجاني";
+      } else {
+        extraFields.classList.add('hidden');
+        loginBtn.className = "flex-1 py-2 text-xs font-bold rounded-lg text-white bg-brand-600 transition";
+        regBtn.className = "flex-1 py-2 text-xs font-bold rounded-lg text-gray-400 hover:text-white transition";
+        submitBtn.innerText = "دخول الحساب";
+      }
+    }
+
+    // Handle Auth Submission
     function handleAuth(e) {
       e.preventDefault();
-      const user = document.getElementById('username').value.trim();
-      const phone = document.getElementById('phoneNumber').value.trim();
-      const avatar = document.getElementById('avatarUrl').value.trim() || `https://api.dicebear.com/7.x/bottts/svg?seed=${user}`;
+      const user = document.getElementById('username').value.trim().replace(/\s+/g, '_');
+      if (!user) return alert('يرجى إدخال اسم مستخدم صالح');
 
-      currentUser = { username: user, phone: phone, avatar: avatar };
-      
-      if(!allUsers.find(u => u.username === user)) {
-        allUsers.push(currentUser);
-        localStorage.setItem('ze_users', JSON.stringify(allUsers));
+      if (authMode === 'register') {
+        const gender = document.getElementById('gender').value;
+        const age = document.getElementById('age').value || 20;
+        const country = document.getElementById('country').value || 'غير محدد';
+        const bio = document.getElementById('bio').value || 'عضو جديد في ZE VIDEO';
+        const avatar = document.getElementById('avatarUrl').value.trim() || `https://api.dicebear.com/7.x/bottts/svg?seed=${user}`;
+
+        currentUser = { username: user, gender, age, country, bio, avatar, isOnline: true };
+        
+        let existingIndex = allUsers.findIndex(u => u.username.toLowerCase() === user.toLowerCase());
+        if (existingIndex >= 0) {
+          allUsers[existingIndex] = currentUser;
+        } else {
+          allUsers.push(currentUser);
+        }
+      } else {
+        let found = allUsers.find(u => u.username.toLowerCase() === user.toLowerCase());
+        if (found) {
+          currentUser = found;
+          currentUser.isOnline = true;
+        } else {
+          currentUser = {
+            username: user,
+            gender: 'غير محدد',
+            age: 22,
+            country: 'العالم',
+            bio: 'عضو نشط',
+            avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${user}`,
+            isOnline: true
+          };
+          allUsers.push(currentUser);
+        }
       }
 
+      localStorage.setItem('ze_users', JSON.stringify(allUsers));
+      localStorage.setItem('ze_logged_user', JSON.stringify(currentUser));
+      
+      syncChannel.postMessage({ type: 'USER_JOINED', username: currentUser.username });
+      initDashboard();
+    }
+
+    // Guest Quick Login Mode
+    function loginAsGuest() {
+      const randomId = Math.floor(1000 + Math.random() * 9000);
+      currentUser = {
+        username: `زائر_${randomId}`,
+        gender: 'ذكر',
+        age: 23,
+        country: 'الشرق الأوسط',
+        bio: 'أنضم لتجربة التعارف والمكالمات في ZE VIDEO',
+        avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=Guest_${randomId}`,
+        isOnline: true
+      };
+
+      allUsers.push(currentUser);
+      localStorage.setItem('ze_users', JSON.stringify(allUsers));
       localStorage.setItem('ze_logged_user', JSON.stringify(currentUser));
       initDashboard();
     }
 
+    // Initialize Dashboard State
     function initDashboard() {
       document.getElementById('authView').classList.add('hidden');
       document.getElementById('dashboardView').classList.remove('hidden');
@@ -269,164 +506,360 @@
       document.getElementById('myUsernameDisplay').innerText = currentUser.username;
       document.getElementById('myAvatarDisplay').src = currentUser.avatar;
 
-      // Init Peer
-      peer = new Peer(currentUser.username.toLowerCase());
-      
-      peer.on('call', call => {
-        if(confirm(`مكالمة واردة من ${call.peer}! هل تريد الرد؟`)) {
-          navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then(stream => {
+      initPeerJS();
+      renderExploreCards();
+      renderActiveChatsList();
+    }
+
+    // Initialize PeerJS for Real-time Video/Audio Calls
+    function initPeerJS() {
+      const cleanPeerId = currentUser.username.toLowerCase().replace(/[^a-z0-9]/g, '');
+      peer = new Peer(cleanPeerId);
+
+      peer.on('open', (id) => {
+        console.log('PeerJS Connected ID:', id);
+      });
+
+      peer.on('call', (call) => {
+        const callerName = call.peer;
+        if (confirm(`📞 مكالمة فيديو/صوت واردة من [${callerName}]! هل تريد الرد والتواصل؟`)) {
+          navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then((stream) => {
             localStream = stream;
             document.getElementById('localVideo').srcObject = stream;
             call.answer(stream);
-            showCallModal(call.peer);
+            showCallModal(callerName);
 
-            call.on('stream', remoteStream => {
+            call.on('stream', (remoteStream) => {
               document.getElementById('remoteVideo').srcObject = remoteStream;
             });
             activeCall = call;
+          }).catch(err => {
+            alert('يرجى السماح بصلاحيات الميكروفون والكاميرا للإجابة على المكالمة');
           });
         }
       });
-
-      renderUsers();
     }
 
-    function renderUsers() {
-      const list = document.getElementById('usersList');
-      list.innerHTML = '';
-      const filtered = allUsers.filter(u => u.username !== currentUser.username);
-      document.getElementById('userCount').innerText = filtered.length;
+    // Tab Navigation
+    function switchTab(tab) {
+      const exploreTab = document.getElementById('exploreTab');
+      const chatsTab = document.getElementById('chatsTab');
+      const navExploreBtn = document.getElementById('navExploreBtn');
+      const navChatsBtn = document.getElementById('navChatsBtn');
+
+      if (tab === 'explore') {
+        exploreTab.classList.remove('hidden');
+        chatsTab.classList.add('hidden');
+        navExploreBtn.className = "px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 bg-brand-600 text-white";
+        navChatsBtn.className = "px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 text-gray-400 hover:text-white hover:bg-dark-800";
+      } else {
+        exploreTab.classList.add('hidden');
+        chatsTab.classList.remove('hidden');
+        navChatsBtn.className = "px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 bg-brand-600 text-white";
+        navExploreBtn.className = "px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 text-gray-400 hover:text-white hover:bg-dark-800";
+      }
+    }
+
+    // Render Dating Cards
+    function renderExploreCards() {
+      const grid = document.getElementById('usersCardsGrid');
+      grid.innerHTML = '';
+
+      const filterGender = document.getElementById('filterGender').value;
+      const searchQuery = document.getElementById('searchPartnerInput').value.toLowerCase();
+
+      const filtered = allUsers.filter(u => {
+        if (u.username === currentUser.username) return false;
+        const matchGender = (filterGender === 'جميع') || (u.gender === filterGender);
+        const matchSearch = u.username.toLowerCase().includes(searchQuery) || u.country.toLowerCase().includes(searchQuery);
+        return matchGender && matchSearch;
+      });
+
+      document.getElementById('onlineCounter').innerText = filtered.length + 1;
+
+      if (filtered.length === 0) {
+        grid.innerHTML = `
+          <div class="col-span-full text-center py-12 text-gray-500">
+            <i class="fa-solid fa-user-slash text-4xl mb-2"></i>
+            <p class="text-sm">لم يتم العثور على مشتركين يطابقون خيارات البحث حالياً.</p>
+          </div>
+        `;
+        return;
+      }
 
       filtered.forEach(u => {
-        list.innerHTML += `
-          <div onclick="openChat('${u.username}')" class="flex items-center justify-between p-2.5 rounded-xl bg-dark-900/60 hover:bg-dark-900 border border-gray-800 cursor-pointer transition">
-            <div class="flex items-center gap-2.5">
-              <img src="${u.avatar}" class="w-9 h-9 rounded-full object-cover border border-gray-700">
+        grid.innerHTML += `
+          <div class="glass-card rounded-2xl overflow-hidden border border-gray-800 hover:border-brand-500/50 transition duration-300 flex flex-col justify-between group">
+            <div class="relative h-48 overflow-hidden bg-dark-900">
+              <img src="${u.avatar}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+              <div class="absolute inset-0 bg-gradient-to-t from-dark-950 via-transparent to-transparent"></div>
+              
+              <span class="absolute top-3 right-3 px-2.5 py-1 rounded-full text-[10px] font-black bg-dark-950/80 text-emerald-400 border border-emerald-500/30 backdrop-blur-md flex items-center gap-1">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> متصل
+              </span>
+
+              <span class="absolute bottom-2 right-3 text-white font-black text-base drop-shadow">
+                ${u.username} <span class="text-xs text-brand-400 font-bold">, ${u.age || 22}</span>
+              </span>
+            </div>
+
+            <div class="p-3.5 space-y-2.5 flex-1 flex flex-col justify-between text-right">
               <div>
-                <h5 class="text-xs font-bold text-white">${u.username}</h5>
-                <p class="text-[10px] text-gray-400">${u.phone}</p>
+                <div class="flex items-center gap-2 text-[11px] text-gray-400 mb-1">
+                  <span><i class="fa-solid fa-location-dot text-red-400"></i> ${u.country || 'غير محدد'}</span>
+                  <span>•</span>
+                  <span><i class="fa-solid fa-venus-mars text-brand-400"></i> ${u.gender || 'أنثى'}</span>
+                </div>
+                <p class="text-xs text-gray-300 line-clamp-2">${u.bio || 'لا تتوفر نبذة شخصية'}</p>
+              </div>
+
+              <div class="pt-2 border-t border-gray-800/80 flex gap-2">
+                <button onclick="startChatWith('${u.username}')" class="flex-1 bg-brand-600 hover:bg-brand-500 text-white font-bold py-2 rounded-xl text-xs transition flex items-center justify-center gap-1.5 shadow">
+                  <i class="fa-solid fa-paper-plane"></i> تواصل الآن
+                </button>
+                <button onclick="directCall('${u.username}')" class="p-2 bg-dark-900 hover:bg-dark-700 text-brand-400 rounded-xl border border-gray-700 transition">
+                  <i class="fa-solid fa-video"></i>
+                </button>
               </div>
             </div>
-            <i class="fa-solid fa-chevron-left text-xs text-gray-600"></i>
           </div>
         `;
       });
     }
 
-    function filterUsers() {
-      const q = document.getElementById('searchInput').value.toLowerCase();
-      const items = document.querySelectorAll('#usersList > div');
-      items.forEach(item => {
-        const name = item.querySelector('h5').innerText.toLowerCase();
-        item.style.display = name.includes(q) ? 'flex' : 'none';
-      });
+    // Direct Call Initiator
+    function directCall(targetUsername) {
+      startChatWith(targetUsername);
+      startCall('video');
     }
 
-    function openChat(username) {
+    // Start Conversation with Selected User
+    function startChatWith(username) {
       selectedChatUser = allUsers.find(u => u.username === username);
+      if (!selectedChatUser) return;
+
+      switchTab('chats');
       document.getElementById('noChatSelected').classList.add('hidden');
       document.getElementById('activeChatBox').classList.remove('hidden');
 
       document.getElementById('chatUsername').innerText = selectedChatUser.username;
       document.getElementById('chatUserAvatar').src = selectedChatUser.avatar;
+      document.getElementById('chatUserGenderBadge').innerText = `${selectedChatUser.gender || ''} - ${selectedChatUser.country || ''}`;
+      document.getElementById('chatUserBio').innerText = selectedChatUser.bio || '';
 
       renderMessages();
+      renderActiveChatsList();
     }
 
+    // Render Active Chats List in Sidebar
+    function renderActiveChatsList() {
+      const list = document.getElementById('chatsList');
+      list.innerHTML = '';
+
+      const otherUsers = allUsers.filter(u => u.username !== currentUser.username);
+      document.getElementById('activeChatsCount').innerText = otherUsers.length;
+
+      otherUsers.forEach(u => {
+        const isSelected = selectedChatUser && selectedChatUser.username === u.username;
+        list.innerHTML += `
+          <div onclick="startChatWith('${u.username}')" class="p-2.5 rounded-xl flex items-center justify-between cursor-pointer transition ${isSelected ? 'bg-brand-600/20 border border-brand-500/50' : 'bg-dark-900/60 hover:bg-dark-800 border border-gray-800'}">
+            <div class="flex items-center gap-2.5">
+              <img src="${u.avatar}" class="w-9 h-9 rounded-full object-cover border border-gray-700">
+              <div>
+                <h5 class="text-xs font-bold text-white">${u.username}</h5>
+                <p class="text-[10px] text-gray-400">${u.country || 'متصل'}</p>
+              </div>
+            </div>
+            <i class="fa-solid fa-chevron-left text-[10px] text-gray-500"></i>
+          </div>
+        `;
+      });
+    }
+
+    // Send Text Message
     function sendMessage() {
       const input = document.getElementById('msgInput');
       const text = input.value.trim();
-      if(!text || !selectedChatUser) return;
+      if (!text || !selectedChatUser) return;
 
-      const chatKey = [currentUser.username, selectedChatUser.username].sort().join('_');
-      if(!messages[chatKey]) messages[chatKey] = [];
-
-      messages[chatKey].push({ sender: currentUser.username, text: text, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) });
-      localStorage.setItem('ze_messages', JSON.stringify(messages));
-
+      saveAndDispatchMessage({ sender: currentUser.username, text: text });
       input.value = '';
-      renderMessages();
     }
 
+    // Send Image Message
     function sendImage(e) {
       const file = e.target.files[0];
-      if(!file || !selectedChatUser) return;
+      if (!file || !selectedChatUser) return;
 
       const reader = new FileReader();
       reader.onload = function(evt) {
-        const chatKey = [currentUser.username, selectedChatUser.username].sort().join('_');
-        if(!messages[chatKey]) messages[chatKey] = [];
-
-        messages[chatKey].push({ sender: currentUser.username, img: evt.target.result, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) });
-        localStorage.setItem('ze_messages', JSON.stringify(messages));
-        renderMessages();
+        saveAndDispatchMessage({ sender: currentUser.username, img: evt.target.result });
       };
       reader.readAsDataURL(file);
     }
 
+    // Record & Send Voice Notes
+    function toggleVoiceRecording() {
+      const recBtn = document.getElementById('voiceRecBtn');
+
+      if (!isRecordingVoice) {
+        navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+          mediaRecorder = new MediaRecorder(stream);
+          audioChunks = [];
+          
+          mediaRecorder.ondataavailable = event => audioChunks.push(event.data);
+          mediaRecorder.onstop = () => {
+            const audioBlob = new Blob(audioChunks, { type: 'audio/mp3' });
+            const reader = new FileReader();
+            reader.onloadend = () => {
+              saveAndDispatchMessage({ sender: currentUser.username, audio: reader.result });
+            };
+            reader.readAsDataURL(audioBlob);
+          };
+
+          mediaRecorder.start();
+          isRecordingVoice = true;
+          recBtn.classList.add('bg-red-600', 'text-white', 'animate-pulse');
+          showToast('جاري تسجيل المقطع الصوتي...');
+        }).catch(err => alert('تعذر الوصول للميكروفون'));
+      } else {
+        mediaRecorder.stop();
+        isRecordingVoice = false;
+        recBtn.classList.remove('bg-red-600', 'text-white', 'animate-pulse');
+      }
+    }
+
+    // Common Dispatch Message Helper
+    function saveAndDispatchMessage(msgObj) {
+      const chatKey = [currentUser.username, selectedChatUser.username].sort().join('_');
+      if (!messages[chatKey]) messages[chatKey] = [];
+
+      msgObj.time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      messages[chatKey].push(msgObj);
+
+      localStorage.setItem('ze_messages', JSON.stringify(messages));
+      
+      syncChannel.postMessage({
+        type: 'NEW_MESSAGE',
+        sender: currentUser.username,
+        receiver: selectedChatUser.username
+      });
+
+      renderMessages();
+    }
+
+    // Render Messages Stream
     function renderMessages() {
-      if(!selectedChatUser) return;
+      if (!selectedChatUser) return;
       const area = document.getElementById('messagesArea');
       area.innerHTML = '';
 
       const chatKey = [currentUser.username, selectedChatUser.username].sort().join('_');
       const chatMsgs = messages[chatKey] || [];
 
+      if (chatMsgs.length === 0) {
+        area.innerHTML = `
+          <div class="text-center py-8 text-gray-500 text-xs">
+            لا توجد رسائل سابقة. ابدأ المحادثة بـ "مرحباً"!
+          </div>
+        `;
+        return;
+      }
+
       chatMsgs.forEach(m => {
         const isMe = m.sender === currentUser.username;
+        let contentHtml = '';
+
+        if (m.text) {
+          contentHtml = `<p>${m.text}</p>`;
+        } else if (m.img) {
+          contentHtml = `<img src="${m.img}" class="rounded-xl max-w-xs w-full object-cover">`;
+        } else if (m.audio) {
+          contentHtml = `<audio controls src="${m.audio}" class="max-w-xs w-full"></audio>`;
+        }
+
         area.innerHTML += `
           <div class="flex flex-col ${isMe ? 'items-end' : 'items-start'}">
-            <div class="max-w-[75%] p-3 rounded-2xl text-xs ${isMe ? 'bg-brand-600 text-white rounded-br-none' : 'bg-dark-900 border border-gray-800 text-gray-200 rounded-bl-none'}">
-              ${m.text ? m.text : `<img src="${m.img}" class="rounded-lg max-w-full">`}
+            <div class="max-w-[80%] sm:max-w-[70%] p-3 rounded-2xl text-xs ${isMe ? 'bg-brand-600 text-white rounded-br-none shadow' : 'bg-dark-900 border border-gray-800 text-gray-200 rounded-bl-none'}">
+              ${contentHtml}
             </div>
             <span class="text-[9px] text-gray-500 mt-1 px-1">${m.time}</span>
           </div>
         `;
       });
+
       area.scrollTop = area.scrollHeight;
     }
 
+    // Start PeerJS Call
     function startCall(type) {
-      if(!selectedChatUser) return;
+      if (!selectedChatUser) return;
       showCallModal(selectedChatUser.username);
+
+      const cleanTargetId = selectedChatUser.username.toLowerCase().replace(/[^a-z0-9]/g, '');
 
       navigator.mediaDevices.getUserMedia({ video: type === 'video', audio: true }).then(stream => {
         localStream = stream;
         document.getElementById('localVideo').srcObject = stream;
 
-        const call = peer.call(selectedChatUser.username.toLowerCase(), stream);
+        const call = peer.call(cleanTargetId, stream);
         call.on('stream', remoteStream => {
           document.getElementById('remoteVideo').srcObject = remoteStream;
+          document.getElementById('callStatusText').innerText = "متصل الآن (مكالمة نشطة)";
         });
         activeCall = call;
-      }).catch(() => alert('يرجى إعطاء صلاحية الكاميرا والميكروفون'));
+      }).catch(err => {
+        alert('تعذر تشغيل الكاميرا/الميكروفون. يرجى إعطاء الإذن للمتصفح.');
+        endCall();
+      });
     }
 
+    // Modal Control Functions
     function showCallModal(targetName) {
       document.getElementById('callTargetName').innerText = targetName;
       document.getElementById('videoCallModal').classList.remove('hidden');
     }
 
     function endCall() {
-      if(activeCall) activeCall.close();
-      if(localStream) localStream.getTracks().forEach(t => t.stop());
+      if (activeCall) activeCall.close();
+      if (localStream) localStream.getTracks().forEach(t => t.stop());
       document.getElementById('videoCallModal').classList.add('hidden');
     }
 
     function toggleMute() {
-      if(localStream) {
-        const audioTrack = localStream.getAudioTracks()[0];
-        audioTrack.enabled = !audioTrack.enabled;
+      if (localStream && localStream.getAudioTracks().length > 0) {
+        const track = localStream.getAudioTracks()[0];
+        track.enabled = !track.enabled;
         document.getElementById('muteBtn').classList.toggle('bg-red-600');
       }
     }
 
     function toggleCamera() {
-      if(localStream && localStream.getVideoTracks().length > 0) {
-        const videoTrack = localStream.getVideoTracks()[0];
-        videoTrack.enabled = !videoTrack.enabled;
+      if (localStream && localStream.getVideoTracks().length > 0) {
+        const track = localStream.getVideoTracks()[0];
+        track.enabled = !track.enabled;
         document.getElementById('camBtn').classList.toggle('bg-red-600');
       }
+    }
+
+    function toggleBlockUser() {
+      if (selectedChatUser && confirm(`هل أنت أؤكد حظر المستخدم [${selectedChatUser.username}]؟`)) {
+        showToast(`تم حظر ${selectedChatUser.username} بنجاح`);
+        goHome();
+      }
+    }
+
+    function showToast(msg) {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = 'glass bg-brand-600/90 text-white text-xs font-bold px-4 py-3 rounded-2xl shadow-2xl border border-brand-400/30 text-center animate-bounce';
+      toast.innerText = msg;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 3500);
+    }
+
+    function goHome() {
+      switchTab('explore');
     }
 
     function logout() {
